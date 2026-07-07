@@ -177,10 +177,10 @@ body {
   transform-origin: center bottom; display: flex; justify-content: center;
 }
 .wheel-label-text {
-  margin-top: 10%; font-size: clamp(14px, 3.8vw, 21px); font-weight: 800;
-  max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-top: 5%; font-size: clamp(28px, 7.5vw, 42px); font-weight: 800;
+  max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.wheel-label-text.is-winner { font-size: clamp(16px, 4.4vw, 24px); font-weight: 800; }
+.wheel-label-text.is-winner { font-size: clamp(32px, 8.6vw, 48px); font-weight: 800; }
 
 /* ladder */
 .ladder-scroll { width: 100%; overflow-x: auto; padding: 4px 0; }
