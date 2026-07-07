@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { permToRungs } from '../../engine/ladder';
 import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
@@ -10,16 +9,24 @@ type Props = {
 
 export function Ladder({ items, winnerIndex, onComplete }: Props) {
   const n = items.length;
+  const ROWS = Math.max(n * 3, 12); // 다리(가로줄)를 넉넉히
 
-  // 입구 i → 출구. 당첨자 입구는 출구 0(🎯), 나머지는 1..n-1 순서대로.
-  const perm = useMemo(() => {
-    const p = new Array<number>(n);
-    let next = 1;
-    for (let i = 0; i < n; i++) p[i] = i === winnerIndex ? 0 : next++;
-    return p;
-  }, [n, winnerIndex]);
-
-  const rungs = useMemo(() => permToRungs(perm), [perm]);
+  // 각 행마다 인접 열에 랜덤으로 가로줄을 놓는다(한 점에 두 줄이 겹치지 않게).
+  const rungs = useMemo(() => {
+    const out: { row: number; col: number }[] = [];
+    for (let row = 0; row < ROWS; row++) {
+      let col = 0;
+      while (col < n - 1) {
+        if (Math.random() < 0.5) {
+          out.push({ row, col });
+          col += 2;
+        } else {
+          col += 1;
+        }
+      }
+    }
+    return out;
+  }, [n, ROWS]);
 
   const [revealed, setRevealed] = useState<number[]>([]);
   const [burst, setBurst] = useState(false);
@@ -35,12 +42,12 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
 
   // 지오메트리
   const W = Math.max(n * 76, 260);
-  const H = 400;
+  const H = 160 + ROWS * 30;
   const padX = 40;
-  const top = 64;
-  const bottom = H - 64;
+  const top = 60;
+  const bottom = H - 60;
   const colX = (c: number) => padX + (c * (W - 2 * padX)) / Math.max(n - 1, 1);
-  const rowY = (row: number) => top + ((row + 1) * (bottom - top)) / (rungs.length + 1);
+  const rowY = (row: number) => top + ((row + 1) * (bottom - top)) / (ROWS + 1);
   const sortedRungs = useMemo(() => [...rungs].sort((a, b) => a.row - b.row), [rungs]);
 
   // 입구 i의 경로 좌표와 도착 출구 col
@@ -61,6 +68,9 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
     const d = pts.map((p, k) => `${k ? 'L' : 'M'} ${p[0]} ${p[1]}`).join(' ');
     return { d, exitCol: col };
   };
+
+  // 당첨자 입구가 사다리를 타고 도달한 출구 = 🎯
+  const winnerExit = pathInfo(winnerIndex).exitCol;
 
   const reveal = (i: number) => {
     if (!revealed.includes(i)) setRevealed((r) => [...r, i]);
@@ -103,7 +113,7 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
           {items.map((_, i) => (
             <circle key={`c${i}`} className="ladder-node" cx={colX(i)} cy={top} r={4} />
           ))}
-          {/* 출구 표시: 당첨 출구(col 0)만 🎯 */}
+          {/* 출구 표시: 당첨자가 도달한 출구만 🎯 */}
           {items.map((_, i) => (
             <text
               key={`e${i}`}
@@ -112,7 +122,7 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
               y={bottom + 26}
               textAnchor="middle"
             >
-              {i === 0 ? '🎯' : '·'}
+              {i === winnerExit ? '🎯' : '·'}
             </text>
           ))}
         </svg>
