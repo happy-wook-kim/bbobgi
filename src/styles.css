@@ -158,30 +158,33 @@ body {
 }
 
 /* roulette */
-.wheel-wrap { position: relative; width: 280px; height: 280px; }
+.wheel-wrap { position: relative; width: min(88vw, 420px); height: min(88vw, 420px); }
 .wheel-pointer {
-  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
-  font-size: 30px; color: var(--accent); z-index: 3; line-height: 1;
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  font-size: 42px; color: var(--accent); z-index: 5; line-height: 1;
 }
 .wheel {
-  position: relative; width: 280px; height: 280px; border-radius: 50%;
-  border: 6px solid var(--ink);
-  transition: transform 4.2s cubic-bezier(0.12, 0.67, 0.1, 1);
+  position: relative; width: 100%; height: 100%; border-radius: 50%;
+  border: 7px solid var(--ink); will-change: transform;
 }
 .wheel-label {
   position: absolute; inset: 0; display: flex; justify-content: center;
 }
 .wheel-label-text {
-  display: block; margin-top: 20px; font-size: 20px; font-weight: 700;
-  color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  max-width: 84px; overflow: hidden; text-overflow: ellipsis;
+  display: block; margin-top: 24%; font-size: clamp(15px, 4vw, 22px); font-weight: 700;
+  color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  max-width: 26%; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap;
 }
-.wheel-label.is-winner .wheel-label-text { font-size: 25px; font-weight: 800; }
-.wheel-hub {
-  position: absolute; top: 50%; left: 50%; width: 46px; height: 46px;
-  margin: -23px 0 0 -23px; border-radius: 50%;
-  background: var(--surface); border: 1px solid var(--line); z-index: 2;
+.wheel-label.is-winner .wheel-label-text { font-size: clamp(17px, 4.6vw, 25px); font-weight: 800; }
+.wheel-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 42%; height: 42%; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--line); z-index: 4;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: clamp(16px, 4.6vw, 26px); color: var(--muted);
+  text-align: center; padding: 10px; box-sizing: border-box;
+  overflow: hidden; word-break: keep-all;
 }
 
 /* ladder */
