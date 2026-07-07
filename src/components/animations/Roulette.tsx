@@ -67,11 +67,12 @@ export function Roulette({ items, onComplete }: Props) {
     const fakeTarget = (Math.floor(from / 360) + turns) * 360 + Math.random() * 360;
 
     // 보너스: 멈춘 듯하다 확률적으로(60%) 살짝 더/뒤로 굴러 최종 자리에 안착. 크기 랜덤.
-    const hasBonus = Math.random() < 0.6;
+    const hasBonus = Math.random() < 0.7;
     let finalTarget = fakeTarget;
     if (hasBonus) {
       const forward = Math.random() < 0.5;
-      const mag = Math.pow(Math.random(), 2) * 540; // 0 ~ 약 1.5바퀴
+      // 최소 0.8칸(작아도 눈에 띄게) ~ 여러 칸. 작은 게 자주, 큰 게 가끔.
+      const mag = sliceAngle * (0.8 + Math.pow(Math.random(), 2) * 6);
       finalTarget = forward ? fakeTarget + mag : fakeTarget - mag;
     }
     const bonusMag = Math.abs(finalTarget - fakeTarget);
@@ -100,8 +101,8 @@ export function Roulette({ items, onComplete }: Props) {
         <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
           {items.map((label, i) => {
             const angle = i * sliceAngle; // 조각 중앙 각도(12시 기준)
-            // 배경색(그 조각)에서 약간 진한 동색 글자
-            const shade = `color-mix(in srgb, ${RAINBOW[i % RAINBOW.length]} 80%, #000000)`;
+            // 배경색(그 조각)을 진하게 처리한 동색 글자 → 배경 위에서 또렷하게
+            const shade = `color-mix(in srgb, ${RAINBOW[i % RAINBOW.length]} 58%, #000000)`;
             // 라벨을 원판 표면에 고정 → 원판과 하나로 함께 회전한다.
             return (
               <span key={i} className="wheel-label" style={{ transform: `rotate(${angle}deg)` }}>
