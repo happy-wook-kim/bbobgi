@@ -38,7 +38,6 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
   const [spinning, setSpinning] = useState(false);
   const [done, setDone] = useState(false);
   const rafRef = useRef(0);
-  const pauseRef = useRef(0);
   const firstRef = useRef(true);
 
   // 상단 포인터(12시)가 현재 가리키는 조각. 조각 중앙이 12시 기준이므로 round.
@@ -96,10 +95,8 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
         finish();
         return;
       }
-      // "끝난 줄 알았지" 하는 짧은 정지 후 보너스 회전(양만큼 시간도 늘어남)
-      pauseRef.current = window.setTimeout(() => {
-        runPhase(fakeTarget, base, 600 + bonusMag * 1.6, finish);
-      }, 420);
+      // 멈추는 순간 끊김 없이 바로 보너스 회전으로 이어짐(양만큼 시간도 늘어남)
+      runPhase(fakeTarget, base, 600 + bonusMag * 1.6, finish);
     });
   };
 
@@ -113,13 +110,7 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce]);
 
-  useEffect(
-    () => () => {
-      cancelAnimationFrame(rafRef.current);
-      clearTimeout(pauseRef.current);
-    },
-    [],
-  );
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
   const active = spinning || done;
   const centerColor = RAINBOW[current % RAINBOW.length];
@@ -145,9 +136,7 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
             );
           })}
         </div>
-        <div className="wheel-center" style={{ color: active ? centerColor : undefined }}>
-          {active ? items[current] : '?'}
-        </div>
+        <div className="wheel-center" style={{ background: active ? centerColor : undefined }} />
       </div>
       {!done ? (
         <button className="btn-primary" onClick={spin} disabled={spinning}>
