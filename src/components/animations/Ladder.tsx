@@ -24,18 +24,7 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
 
   // 가로줄 + 포탈 쌍 랜덤 생성
   const { rungs, pairs } = useMemo(() => {
-    const rg: { row: number; col: number }[] = [];
-    for (let row = 0; row < ROWS; row++) {
-      let col = 0;
-      while (col < n - 1) {
-        if (Math.random() < 0.45) {
-          rg.push({ row, col });
-          col += 2;
-        } else {
-          col += 1;
-        }
-      }
-    }
+    // 포탈 쌍을 먼저 배치한다
     const pairCount = Math.min(2, PORTAL_COLORS.length);
     const pr: Pair[] = [];
     const taken = new Set<string>();
@@ -53,6 +42,27 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
     };
     for (let k = 0; k < pairCount; k++) {
       pr.push({ a: spot(), b: spot(), color: PORTAL_COLORS[k] });
+    }
+    const portalCells = new Set<string>();
+    pr.forEach((p) => {
+      portalCells.add(`${p.a.row},${p.a.col}`);
+      portalCells.add(`${p.b.row},${p.b.col}`);
+    });
+
+    // 가로줄: 포탈이 있는 칸은 건드리지 않는다(경로가 포탈을 안 새고 반드시 타도록)
+    const rg: { row: number; col: number }[] = [];
+    for (let row = 0; row < ROWS; row++) {
+      let col = 0;
+      while (col < n - 1) {
+        const hitsPortal =
+          portalCells.has(`${row},${col}`) || portalCells.has(`${row},${col + 1}`);
+        if (!hitsPortal && Math.random() < 0.45) {
+          rg.push({ row, col });
+          col += 2;
+        } else {
+          col += 1;
+        }
+      }
     }
     return { rungs: rg, pairs: pr };
   }, [n, ROWS]);
@@ -208,8 +218,8 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
           {/* 포탈 쌍(같은 색끼리 연결) */}
           {pairs.map((p, k) => (
             <g key={`pt${k}`}>
-              <circle className="ladder-portal-dot" cx={colX(p.a.col)} cy={rowY(p.a.row)} r={11} fill={p.color} />
-              <circle className="ladder-portal-dot" cx={colX(p.b.col)} cy={rowY(p.b.row)} r={11} fill={p.color} />
+              <circle className="ladder-portal-dot" cx={colX(p.a.col)} cy={rowY(p.a.row)} r={12} fill="#fff" stroke={p.color} />
+              <circle className="ladder-portal-dot" cx={colX(p.b.col)} cy={rowY(p.b.row)} r={12} fill="#fff" stroke={p.color} />
             </g>
           ))}
           {/* 완주한 참가자 경로 */}

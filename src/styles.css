@@ -192,7 +192,7 @@ body {
 .ladder-node { fill: var(--ink); }
 .ladder-exit { font-size: 16px; fill: var(--muted); }
 .ladder-entry { font-size: 13px; fill: var(--ink); font-weight: 700; }
-.ladder-portal-dot { stroke: #fff; stroke-width: 2.5; }
+.ladder-portal-dot { stroke-width: 4; }
 .ladder-marker { stroke: #fff; stroke-width: 2.5; }
 .ladder-trace {
   fill: none; stroke-width: 4;
