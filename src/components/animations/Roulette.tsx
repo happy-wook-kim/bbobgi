@@ -32,6 +32,11 @@ function easeOutBack(t: number, s: number): number {
   return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
 }
 
+/** 느리게 시작 → 빨라짐 → 느리게 멈춤. 역방향 회전에 쓴다. */
+function easeInOut(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
 export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Props) {
   const n = items.length;
   const sliceAngle = 360 / n;
@@ -52,22 +57,32 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
     setSpinning(true);
     setDone(false);
 
-    // 현재 회전에서 이어서 누적. 바퀴 수·시간·튕김을 매번 랜덤화.
+    // 현재 회전에서 이어서 누적. 방향·바퀴 수·시간·튕김을 매번 랜덤화.
     const from = rotation;
     const finalMod = ((((-winnerIndex * sliceAngle) % 360) + 360) % 360);
-    const turns = 5 + Math.floor(Math.random() * 5); // 5~9바퀴
-    const target = (Math.floor(from / 360) + turns) * 360 + finalMod;
+    const turns = 5 + Math.floor(Math.random() * 5); // 5~9바퀴 (역방향도 여러 바퀴)
+    const reverse = Math.random() < 0.4; // 40% 역방향
+    const target = reverse
+      ? (Math.floor(from / 360) - turns) * 360 + finalMod
+      : (Math.floor(from / 360) + turns) * 360 + finalMod;
     const delta = target - from;
 
-    // 마지막 거동: 역방향 튕김 / 정방향 마무리 / 튕김 없음 (확률적)
-    const r = Math.random();
-    const s = r < 0.4 ? 0.9 + Math.random() * 1.4 : r < 0.75 ? -(0.4 + Math.random() * 0.7) : 0;
+    // 정방향: 빠르게 시작 → 감속 + 확률적 튕김(역/정/없음).
+    // 역방향: 느리게 시작 → 빨라짐 → 종료 즈음 감속(ease-in-out).
+    let ease: (t: number) => number;
+    if (reverse) {
+      ease = easeInOut;
+    } else {
+      const r = Math.random();
+      const s = r < 0.4 ? 0.9 + Math.random() * 1.4 : r < 0.75 ? -(0.4 + Math.random() * 0.7) : 0;
+      ease = (t) => easeOutBack(t, s);
+    }
     const duration = 3800 + Math.random() * 1600;
     const start = performance.now();
 
     const step = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
-      const rot = from + easeOutBack(t, s) * delta;
+      const rot = from + ease(t) * delta;
       setRotation(rot);
       setCurrent(pointerIndex(rot));
       if (t < 1) {
