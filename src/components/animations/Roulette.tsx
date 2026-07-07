@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 type Props = {
   items: string[];
   winnerIndex: number;
+  nonce: number;
   onComplete: () => void;
   onReplay: () => void;
 };
@@ -31,7 +32,7 @@ function easeOutBack(t: number, s: number): number {
   return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
 }
 
-export function Roulette({ items, winnerIndex, onComplete, onReplay }: Props) {
+export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Props) {
   const n = items.length;
   const sliceAngle = 360 / n;
   const background = useMemo(() => conicBackground(n), [n]);
@@ -41,27 +42,32 @@ export function Roulette({ items, winnerIndex, onComplete, onReplay }: Props) {
   const [spinning, setSpinning] = useState(false);
   const [done, setDone] = useState(false);
   const rafRef = useRef(0);
+  const firstRef = useRef(true);
 
   // 상단 포인터(12시)가 현재 가리키는 조각. 조각 중앙이 12시 기준이므로 round.
   const pointerIndex = (rot: number) => ((Math.round(-rot / sliceAngle) % n) + n) % n;
 
-  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
-
   const spin = () => {
-    if (spinning || done) return;
+    if (spinning) return;
     setSpinning(true);
-    // 당첨 조각 중앙을 12시(포인터)로 가져오는 회전량 + 넉넉한 바퀴수
-    const target = 360 * 6 - winnerIndex * sliceAngle;
+    setDone(false);
 
-    // 마지막 거동을 확률적으로: 역방향 튕김 / 정방향 마무리 / 튕김 없음
+    // 현재 회전에서 이어서 누적. 바퀴 수·시간·튕김을 매번 랜덤화.
+    const from = rotation;
+    const finalMod = ((((-winnerIndex * sliceAngle) % 360) + 360) % 360);
+    const turns = 5 + Math.floor(Math.random() * 5); // 5~9바퀴
+    const target = (Math.floor(from / 360) + turns) * 360 + finalMod;
+    const delta = target - from;
+
+    // 마지막 거동: 역방향 튕김 / 정방향 마무리 / 튕김 없음 (확률적)
     const r = Math.random();
     const s = r < 0.4 ? 0.9 + Math.random() * 1.4 : r < 0.75 ? -(0.4 + Math.random() * 0.7) : 0;
-    const duration = 4200 + Math.random() * 900;
+    const duration = 3800 + Math.random() * 1600;
     const start = performance.now();
 
     const step = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
-      const rot = easeOutBack(t, s) * target;
+      const rot = from + easeOutBack(t, s) * delta;
       setRotation(rot);
       setCurrent(pointerIndex(rot));
       if (t < 1) {
@@ -75,6 +81,18 @@ export function Roulette({ items, winnerIndex, onComplete, onReplay }: Props) {
     };
     rafRef.current = requestAnimationFrame(step);
   };
+
+  // "다시 돌리기"(nonce 증가) 시 바로 재회전. 첫 마운트는 건너뛴다.
+  useEffect(() => {
+    if (firstRef.current) {
+      firstRef.current = false;
+      return;
+    }
+    spin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nonce]);
+
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
   const active = spinning || done;
   const centerColor = RAINBOW[current % RAINBOW.length];

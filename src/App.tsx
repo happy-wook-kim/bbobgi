@@ -13,7 +13,7 @@ export default function App() {
   const [kind, setKind] = useState<AnimationKind | null>(null);
   const [items, setItems] = useState<string[]>([]);
   const [winnerIndex, setWinnerIndex] = useState(-1);
-  const [spinKey, setSpinKey] = useState(0);
+  const [nonce, setNonce] = useState(0);
 
   const handleChoose = (chosen: AnimationKind) => {
     setKind(chosen);
@@ -34,10 +34,10 @@ export default function App() {
     setStep('choose');
   };
 
-  // 임시(테스트용): 같은 참가자로 당첨자를 새로 뽑아 룰렛을 다시 돌린다.
+  // 임시(테스트용): 같은 참가자로 당첨자를 새로 뽑고 룰렛을 이어서 다시 돌린다.
   const replay = () => {
     setWinnerIndex(pickWinner(items.length));
-    setSpinKey((k) => k + 1);
+    setNonce((k) => k + 1);
   };
 
   return (
@@ -54,9 +54,9 @@ export default function App() {
           )}
           {kind === 'roulette' && (
             <Roulette
-              key={spinKey}
               items={items}
               winnerIndex={winnerIndex}
+              nonce={nonce}
               onComplete={() => setStep('result')}
               onReplay={replay}
             />
