@@ -6,7 +6,6 @@ import { SetupScreen } from './components/SetupScreen';
 import { CardDraw } from './components/animations/CardDraw';
 import { Roulette } from './components/animations/Roulette';
 import { Ladder } from './components/animations/Ladder';
-import { ResultScreen } from './components/ResultScreen';
 
 export default function App() {
   const [step, setStep] = useState<Step>('choose');
@@ -33,6 +32,7 @@ export default function App() {
     setStep('choose');
   };
 
+  // 세 연출 모두 멈추면 잠깐 뒤 당첨 연출을 자체적으로 띄우고, 끝나면 처음으로 돌아온다.
   return (
     <div className="app">
       {step === 'choose' && <ChooseAnimation onChoose={handleChoose} />}
@@ -41,18 +41,14 @@ export default function App() {
       )}
       {step === 'animate' && kind && (
         <>
-          {/* 카드·룰렛은 멈추는 순간 당첨 연출을 띄우고 바로 처음으로 */}
           {kind === 'card' && (
             <CardDraw items={items} winnerIndex={winnerIndex} onComplete={toChoose} />
           )}
           {kind === 'roulette' && <Roulette items={items} onComplete={toChoose} />}
           {kind === 'ladder' && (
-            <Ladder items={items} winnerIndex={winnerIndex} onComplete={() => setStep('result')} />
+            <Ladder items={items} winnerIndex={winnerIndex} onComplete={toChoose} />
           )}
         </>
-      )}
-      {step === 'result' && (
-        <ResultScreen winner={items[winnerIndex]} onRestart={toChoose} />
       )}
     </div>
   );

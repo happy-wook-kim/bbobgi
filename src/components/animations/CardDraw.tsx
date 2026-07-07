@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
@@ -9,6 +9,8 @@ type Props = {
 
 export function CardDraw({ items, winnerIndex, onComplete }: Props) {
   const [flipped, setFlipped] = useState<number[]>([]);
+  const [reveal, setReveal] = useState(false);
+  const revealRef = useRef(0);
   const found = flipped.includes(winnerIndex);
   const nextOrder = flipped.length + 1;
 
@@ -16,6 +18,13 @@ export function CardDraw({ items, winnerIndex, onComplete }: Props) {
     if (flipped.includes(i) || found) return;
     setFlipped((f) => [...f, i]);
   };
+
+  // 당첨 카드가 나오면 잠깐 확인할 여유를 두고 당첨 연출을 띄운다.
+  useEffect(() => {
+    if (!found) return;
+    revealRef.current = window.setTimeout(() => setReveal(true), 900);
+    return () => clearTimeout(revealRef.current);
+  }, [found]);
 
   return (
     <div className="screen cards">
@@ -45,7 +54,14 @@ export function CardDraw({ items, winnerIndex, onComplete }: Props) {
           );
         })}
       </div>
-      {found && <WinnerBurst overlay onRestart={onComplete} />}
+      {reveal && (
+        <WinnerBurst
+          overlay
+          label={items[winnerIndex]}
+          sub="이 카드를 뽑은 분이 쏘기로 했어요 ☕"
+          onRestart={onComplete}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { permToRungs } from '../../engine/ladder';
+import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
   items: string[];
@@ -21,8 +22,16 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
   const rungs = useMemo(() => permToRungs(perm), [perm]);
 
   const [revealed, setRevealed] = useState<number[]>([]);
+  const [burst, setBurst] = useState(false);
+  const burstRef = useRef(0);
   const winnerRevealed = revealed.includes(winnerIndex);
-  const allDone = revealed.length >= n;
+
+  // 당첨자 경로를 확인하면 잠깐 뒤 당첨 연출을 띄운다.
+  useEffect(() => {
+    if (!winnerRevealed) return;
+    burstRef.current = window.setTimeout(() => setBurst(true), 900);
+    return () => clearTimeout(burstRef.current);
+  }, [winnerRevealed]);
 
   // 지오메트리
   const W = Math.max(n * 76, 260);
@@ -61,7 +70,7 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
     <div className="screen ladder">
       <p className="eyebrow">사다리타기</p>
       <h2 className="stage-title">
-        {winnerRevealed || allDone ? '경로를 다 확인했어요' : '이름을 눌러 사다리를 타세요'}
+        {winnerRevealed ? '당첨을 확인했어요' : '이름을 눌러 사다리를 타세요'}
       </h2>
 
       <div className="ladder-scroll">
@@ -127,10 +136,13 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
         })}
       </div>
 
-      {(winnerRevealed || allDone) && (
-        <button className="btn-primary" onClick={onComplete}>
-          결과 보기
-        </button>
+      {burst && (
+        <WinnerBurst
+          overlay
+          label={items[winnerIndex]}
+          sub="님이 오늘 쏘기로 했어요 ☕"
+          onRestart={onComplete}
+        />
       )}
     </div>
   );
