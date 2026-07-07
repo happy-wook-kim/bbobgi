@@ -122,12 +122,12 @@ body {
 
 /* card flip */
 .card-grid {
-  display: flex; flex-wrap: wrap; gap: 16px;
+  display: flex; flex-wrap: wrap; gap: 12px;
   justify-content: center; perspective: 1400px; width: 100%;
 }
 .flip-card {
   flex: 0 0 auto;
-  width: min(38vw, 168px); aspect-ratio: 3 / 4; padding: 0;
+  width: min(26vw, 104px); aspect-ratio: 3 / 4; padding: 0;
   border: none; background: transparent; cursor: pointer;
 }
 .flip-card:disabled { cursor: default; }
@@ -140,9 +140,9 @@ body {
 .flip-face {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 18px; backface-visibility: hidden; font-size: 44px;
+  border-radius: 16px; backface-visibility: hidden; font-size: 34px;
 }
-.flip-back { background: var(--ink); color: #fff; font-size: 52px; }
+.flip-back { background: var(--ink); color: #fff; font-size: 40px; }
 .flip-front {
   background: var(--surface); border: 1px solid var(--line);
   transform: rotateY(180deg);
@@ -221,6 +221,45 @@ body {
   60% { transform: scale(1.06); }
   100% { transform: scale(1); }
 }
+/* winner burst */
+.winner-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(245, 244, 241, 0.8);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  animation: fade-in 0.2s ease;
+}
+.winner-burst {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  text-align: center;
+}
+.winner-bang {
+  font-size: clamp(56px, 18vw, 104px); font-weight: 800; color: var(--accent);
+  letter-spacing: -0.02em; line-height: 1;
+  animation: bang 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both,
+    wiggle 1.1s ease-in-out 0.5s infinite;
+}
+.confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+.confetti-piece {
+  position: absolute; top: 44%; width: 10px; height: 14px; border-radius: 2px;
+  opacity: 0; animation: burst 1.05s ease-out forwards;
+}
+@keyframes burst {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+}
+@keyframes bang {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, .wheel { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

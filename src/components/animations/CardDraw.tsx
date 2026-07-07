@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
   items: string[];
@@ -44,11 +45,7 @@ export function CardDraw({ items, winnerIndex, onComplete }: Props) {
           );
         })}
       </div>
-      {found && (
-        <button className="btn-primary" onClick={onComplete}>
-          다시하기
-        </button>
-      )}
+      {found && <WinnerBurst overlay onRestart={onComplete} />}
     </div>
   );
 }
