@@ -31,7 +31,9 @@ export function Roulette({ items, onComplete }: Props) {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [landed, setLanded] = useState(-1); // 최종적으로 멈춘 자리의 조각 = 당첨
+  const [reveal, setReveal] = useState(false); // 잠깐 뒤 당첨 연출 표시
   const rafRef = useRef(0);
+  const revealRef = useRef(0);
 
   // 상단 포인터(12시)가 가리키는 조각. 조각 중앙이 12시 기준이므로 round.
   const pointerIndex = (rot: number) => ((Math.round(-rot / sliceAngle) % n) + n) % n;
@@ -39,6 +41,8 @@ export function Roulette({ items, onComplete }: Props) {
   const land = (rot: number) => {
     setLanded(pointerIndex(rot));
     setSpinning(false);
+    // 멈춘 자리를 눈으로 확인할 여유를 두고 당첨 연출을 띄운다.
+    revealRef.current = window.setTimeout(() => setReveal(true), 900);
   };
 
   // fromR → toR 로 dur동안 ease-in-out 회전. 끝나면 onEnd.
@@ -66,13 +70,12 @@ export function Roulette({ items, onComplete }: Props) {
     const turns = 5 + Math.floor(Math.random() * 5);
     const fakeTarget = (Math.floor(from / 360) + turns) * 360 + Math.random() * 360;
 
-    // 보너스: 멈춘 듯하다 확률적으로(60%) 살짝 더/뒤로 굴러 최종 자리에 안착. 크기 랜덤.
+    // 보너스: 멈춘 듯하다 확률적으로(70%) 살짝 더/뒤로 굴러 최종 자리에 안착. 크기 랜덤.
     const hasBonus = Math.random() < 0.7;
     let finalTarget = fakeTarget;
     if (hasBonus) {
       const forward = Math.random() < 0.5;
-      // 최소 0.8칸(작아도 눈에 띄게) ~ 여러 칸. 작은 게 자주, 큰 게 가끔.
-      const mag = sliceAngle * (0.8 + Math.pow(Math.random(), 2) * 6);
+      const mag = sliceAngle * (0.8 + Math.pow(Math.random(), 2) * 6); // 최소 0.8칸 ~ 여러 칸
       finalTarget = forward ? fakeTarget + mag : fakeTarget - mag;
     }
     const bonusMag = Math.abs(finalTarget - fakeTarget);
@@ -84,18 +87,26 @@ export function Roulette({ items, onComplete }: Props) {
         return;
       }
       // 멈추는 순간 끊김 없이 바로 보너스 회전으로 이어짐(양만큼 시간도 늘어남)
-      runPhase(fakeTarget, finalTarget, 1100 + bonusMag * 2.6, () => land(finalTarget));
+      runPhase(fakeTarget, finalTarget, 1900 + bonusMag * 3.4, () => land(finalTarget));
     });
   };
 
-  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(rafRef.current);
+      clearTimeout(revealRef.current);
+    },
+    [],
+  );
 
   const done = landed >= 0;
 
   return (
     <div className="screen roulette">
       <p className="eyebrow">룰렛</p>
-      <h2 className="stage-title">{spinning ? '누가 걸릴까…' : '돌려서 뽑으세요'}</h2>
+      <h2 className="stage-title">
+        {spinning ? '누가 걸릴까…' : done ? '멈췄어요' : '돌려서 뽑으세요'}
+      </h2>
       <div className="wheel-wrap">
         <div className="wheel-pointer" aria-hidden>▾</div>
         <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
@@ -122,7 +133,7 @@ export function Roulette({ items, onComplete }: Props) {
           돌리기
         </button>
       )}
-      {done && (
+      {reveal && (
         <WinnerBurst
           overlay
           label={items[landed]}
