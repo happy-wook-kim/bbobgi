@@ -7,6 +7,7 @@ import { TokenReveal } from './components/TokenReveal';
 import { ChooseAnimation } from './components/ChooseAnimation';
 import { CardDraw } from './components/animations/CardDraw';
 import { Roulette } from './components/animations/Roulette';
+import { Ladder } from './components/animations/Ladder';
 import { ResultScreen } from './components/ResultScreen';
 
 export default function App() {
@@ -65,10 +66,7 @@ export default function App() {
             />
           )}
           {kind === 'ladder' && (
-            <div className="screen">
-              <p>사다리 연출 (다음 태스크에서 교체)</p>
-              <button className="primary" onClick={() => setStep('result')}>결과 보기</button>
-            </div>
+            <Ladder participants={participants} outcomes={outcomes} result={result} onComplete={() => setStep('result')} />
           )}
         </>
       )}
