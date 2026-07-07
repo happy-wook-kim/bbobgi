@@ -18,7 +18,7 @@ export function SetupScreen({ kind, onStart, onBack }: Props) {
   return (
     <div className="screen setup">
       <button className="btn-ghost back" onClick={onBack}>
-        ← 연출 바꾸기
+        ← 게임 바꾸기
       </button>
       <p className="eyebrow">{KIND_LABEL[kind]}</p>
       {kind === 'card' ? <CardSetup onStart={onStart} /> : <NameSetup onStart={onStart} />}

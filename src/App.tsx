@@ -41,8 +41,9 @@ export default function App() {
       )}
       {step === 'animate' && kind && (
         <>
+          {/* 카드는 당첨 카드가 곧 결과라 결과 화면 없이 바로 처음으로 */}
           {kind === 'card' && (
-            <CardDraw items={items} winnerIndex={winnerIndex} onComplete={() => setStep('result')} />
+            <CardDraw items={items} winnerIndex={winnerIndex} onComplete={toChoose} />
           )}
           {kind === 'roulette' && (
             <Roulette items={items} winnerIndex={winnerIndex} onComplete={() => setStep('result')} />
@@ -52,8 +53,8 @@ export default function App() {
           )}
         </>
       )}
-      {step === 'result' && kind && (
-        <ResultScreen winner={items[winnerIndex]} kind={kind} onRestart={toChoose} />
+      {step === 'result' && (
+        <ResultScreen winner={items[winnerIndex]} onRestart={toChoose} />
       )}
     </div>
   );

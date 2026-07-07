@@ -46,7 +46,7 @@ export function CardDraw({ items, winnerIndex, onComplete }: Props) {
       </div>
       {found && (
         <button className="btn-primary" onClick={onComplete}>
-          결과 보기
+          다시하기
         </button>
       )}
     </div>
