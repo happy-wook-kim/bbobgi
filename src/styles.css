@@ -21,3 +21,8 @@ h1 { font-size: 40px; }
   border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 .hint { color: #86868b; font-size: 14px; }
+.choose-grid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.choose-btn { font-size: 20px; padding: 24px; }
+.winner { font-size: 28px; font-weight: 700; color: #0071e3; }
+.assign-list { list-style: none; padding: 0; width: 100%; font-size: 18px; }
+.assign-list li { padding: 8px 0; border-bottom: 1px solid #e0e0e5; }
