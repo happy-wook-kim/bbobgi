@@ -6,12 +6,14 @@ type Props = {
   onComplete: () => void;
 };
 
-/** n등분 원판 배경. 미니멀하게 무채색 두 톤을 번갈아 칠한다. */
+// 빨주노초파남보
+const RAINBOW = ['#e53935', '#f57c00', '#fdd835', '#43a047', '#1e88e5', '#3949ab', '#8e24aa'];
+
+/** n등분 원판 배경을 무지개 색으로 칠한다. */
 function conicBackground(n: number): string {
   const slice = 100 / n;
-  const shades = ['#ecece8', '#e0e0da'];
   const stops = Array.from({ length: n }, (_, i) => {
-    return `${shades[i % 2]} ${i * slice}% ${(i + 1) * slice}%`;
+    return `${RAINBOW[i % RAINBOW.length]} ${i * slice}% ${(i + 1) * slice}%`;
   });
   return `conic-gradient(from -90deg, ${stops.join(', ')})`;
 }
