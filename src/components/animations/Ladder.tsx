@@ -12,6 +12,11 @@ type Portal = { row: number; col: number };
 type Pair = { a: Portal; b: Portal; color: string };
 
 const PORTAL_COLORS = ['#2979ff', '#aa00ff', '#00b8d4', '#ff4081'];
+// 참가자별 고유 색(경로·마커에 사용)
+const PLAYER_COLORS = [
+  '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00acc1',
+  '#c2185b', '#fbc02d', '#5e35b1', '#00897b', '#d81b60', '#3949ab',
+];
 
 export function Ladder({ items, winnerIndex, onComplete }: Props) {
   const n = items.length;
@@ -214,7 +219,8 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
               className={`ladder-trace ${i === winnerIndex ? 'is-winner' : ''}`}
               d={pathD(allPaths[i].cells)}
               fill="none"
-              opacity={i === winnerIndex ? 1 : 0.28}
+              stroke={PLAYER_COLORS[i % PLAYER_COLORS.length]}
+              opacity={0.5}
             />
           ))}
           {/* 현재 참가자 경로 */}
@@ -223,7 +229,8 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
               className={`ladder-trace ${pIdx === winnerIndex ? 'is-winner' : ''}`}
               d={curD}
               fill="none"
-              opacity={pIdx === winnerIndex ? 1 : 0.55}
+              stroke={PLAYER_COLORS[pIdx % PLAYER_COLORS.length]}
+              opacity={0.95}
             />
           )}
           {/* 입구 이름 */}
@@ -239,7 +246,15 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
             </text>
           ))}
           {/* 이동 마커 */}
-          {started && pIdx < n && <circle className="ladder-marker" cx={mx} cy={my} r={9} />}
+          {started && pIdx < n && (
+            <circle
+              className="ladder-marker"
+              cx={mx}
+              cy={my}
+              r={9}
+              fill={PLAYER_COLORS[pIdx % PLAYER_COLORS.length]}
+            />
+          )}
         </svg>
       </div>
 
