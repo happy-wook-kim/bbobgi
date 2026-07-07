@@ -84,7 +84,7 @@ export function Roulette({ items, onComplete }: Props) {
         return;
       }
       // 멈추는 순간 끊김 없이 바로 보너스 회전으로 이어짐(양만큼 시간도 늘어남)
-      runPhase(fakeTarget, finalTarget, 600 + bonusMag * 1.6, () => land(finalTarget));
+      runPhase(fakeTarget, finalTarget, 1100 + bonusMag * 2.6, () => land(finalTarget));
     });
   };
 

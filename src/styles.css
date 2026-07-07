@@ -162,7 +162,8 @@ body {
 }
 
 /* roulette */
-.wheel-wrap { position: relative; width: min(88vw, 420px); height: min(88vw, 420px); }
+.wheel-wrap { position: relative; width: min(88vw, 420px); height: min(88vw, 420px); pointer-events: none; }
+.roulette .btn-primary { position: relative; z-index: 3; }
 .wheel-pointer {
   position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
   font-size: 42px; color: var(--accent); z-index: 5; line-height: 1;
