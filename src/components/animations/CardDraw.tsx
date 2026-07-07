@@ -46,10 +46,7 @@ export function CardDraw({ items, winnerIndex, onComplete }: Props) {
               disabled={isFlipped || found}
               aria-label={isFlipped ? undefined : '카드 뒤집기'}
             >
-              <span className="flip-inner">
-                <span className="flip-face flip-back" aria-hidden>?</span>
-                <span className="flip-face flip-front">{isWinner ? '🎯' : token}</span>
-              </span>
+              <span className="flip-face">{isFlipped ? (isWinner ? '🎯' : token) : '?'}</span>
             </button>
           );
         })}

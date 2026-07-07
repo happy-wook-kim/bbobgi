@@ -132,7 +132,7 @@ body {
 }
 .card-grid {
   display: flex; flex-wrap: wrap; gap: 14px;
-  justify-content: center; perspective: 1600px; width: 100%;
+  justify-content: center; width: 100%;
 }
 .flip-card {
   flex: 0 0 auto;
@@ -140,23 +140,22 @@ body {
   border: none; background: transparent; cursor: pointer;
 }
 .flip-card:disabled { cursor: default; }
-.flip-inner {
-  position: relative; display: block; width: 100%; height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+/* 2D 가로 뒤집기(축소→확대) — 3D 레이어가 없어 이모지가 선명하다 */
+.flip-card.is-flipped { animation: card-flip 0.45s ease; }
+@keyframes card-flip {
+  0% { transform: scaleX(1); }
+  50% { transform: scaleX(0.06); }
+  100% { transform: scaleX(1); }
 }
-.flip-card.is-flipped .flip-inner { transform: rotateY(180deg); }
 .flip-face {
-  position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 18px; backface-visibility: hidden; font-size: 70px;
+  width: 100%; height: 100%; border-radius: 18px;
+  font-size: 70px; background: var(--ink); color: #fff;
 }
-.flip-back { background: var(--ink); color: #fff; font-size: 75px; }
-.flip-front {
-  background: var(--surface); border: 1px solid var(--line);
-  transform: rotateY(180deg);
+.flip-card.is-flipped .flip-face {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
 }
-.flip-card.is-winner .flip-front {
+.flip-card.is-winner .flip-face {
   border-color: var(--accent);
   animation: winner-glow 0.9s ease-in-out infinite alternate;
 }
