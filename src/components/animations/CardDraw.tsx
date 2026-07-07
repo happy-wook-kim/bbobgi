@@ -1,71 +1,51 @@
 import { useState } from 'react';
-import type { Participant, Outcome, DrawResult } from '../../types';
-import { outcomeLabel } from '../../labels';
 
 type Props = {
-  participants: Participant[];
-  outcomes: Outcome[];
-  result: DrawResult;
+  items: string[];
+  winnerIndex: number;
   onComplete: () => void;
 };
 
-export function CardDraw({ participants, outcomes, result, onComplete }: Props) {
+export function CardDraw({ items, winnerIndex, onComplete }: Props) {
   const [flipped, setFlipped] = useState<number[]>([]);
+  const found = flipped.includes(winnerIndex);
+  const nextOrder = flipped.length + 1;
 
-  if (result.mode === 'single') {
-    const winner = participants.find((p) => p.id === result.winnerId)!;
-    const revealed = flipped.length > 0;
-    return (
-      <div className="screen cards">
-        <h2>카드를 한 장 뒤집으세요</h2>
-        <div className="card-grid">
-          {participants.map((_, i) => (
-            <button
-              key={i}
-              className={`card ${flipped.includes(i) ? 'flipped' : ''}`}
-              disabled={revealed}
-              onClick={() => setFlipped([i])}
-            >
-              {flipped.includes(i) ? `🎯 ${winner.token}` : '?'}
-            </button>
-          ))}
-        </div>
-        {revealed && (
-          <button className="primary" onClick={onComplete}>
-            결과 보기
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  const assignments = result.assignments;
-  const turn = flipped.length; // 다음에 뽑을 참가자 index
-  const done = turn >= participants.length;
+  const flip = (i: number) => {
+    if (flipped.includes(i) || found) return;
+    setFlipped((f) => [...f, i]);
+  };
 
   return (
     <div className="screen cards">
-      <h2>{done ? '모두 뽑았어요' : `${participants[turn].token} 님, 카드를 뽑으세요`}</h2>
+      <p className="eyebrow">카드 뽑기</p>
+      <h2 className="stage-title">
+        {found ? '당첨 카드가 나왔어요' : `${nextOrder}번째, 카드를 뽑으세요`}
+      </h2>
       <div className="card-grid">
-        {participants.map((_, i) => {
-          const order = flipped.indexOf(i); // 이 카드를 뽑은 참가자 순번
-          const owner = order >= 0 ? participants[order] : null;
+        {items.map((token, i) => {
+          const isFlipped = flipped.includes(i);
+          const isWinner = i === winnerIndex;
           return (
             <button
               key={i}
-              className={`card ${order >= 0 ? 'flipped' : ''}`}
-              disabled={order >= 0 || done}
-              onClick={() => setFlipped((f) => [...f, i])}
+              className={`flip-card ${isFlipped ? 'is-flipped' : ''} ${
+                isFlipped && isWinner ? 'is-winner' : ''
+              }`}
+              onClick={() => flip(i)}
+              disabled={isFlipped || found}
+              aria-label={isFlipped ? undefined : '카드 뒤집기'}
             >
-              {owner
-                ? `${owner.token} → ${outcomeLabel(outcomes, assignments[owner.id])}`
-                : '?'}
+              <span className="flip-inner">
+                <span className="flip-face flip-back" aria-hidden>?</span>
+                <span className="flip-face flip-front">{isWinner ? '🎯' : token}</span>
+              </span>
             </button>
           );
         })}
       </div>
-      {done && (
-        <button className="primary" onClick={onComplete}>
+      {found && (
+        <button className="btn-primary" onClick={onComplete}>
           결과 보기
         </button>
       )}

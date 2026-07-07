@@ -1,101 +1,66 @@
 import { useMemo, useState } from 'react';
-import type { Participant, Outcome, DrawResult } from '../../types';
-import { outcomeLabel } from '../../labels';
 
 type Props = {
-  participants: Participant[];
-  outcomes: Outcome[];
-  result: DrawResult;
+  items: string[];
+  winnerIndex: number;
   onComplete: () => void;
 };
 
-const COLORS = ['#0071e3', '#ff9500', '#34c759', '#ff2d55', '#af52de', '#5ac8fa', '#ffcc00', '#5856d6'];
-
+/** n등분 원판 배경. 미니멀하게 무채색 두 톤을 번갈아 칠한다. */
 function conicBackground(n: number): string {
   const slice = 100 / n;
+  const shades = ['#ecece8', '#e0e0da'];
   const stops = Array.from({ length: n }, (_, i) => {
-    const c = COLORS[i % COLORS.length];
-    return `${c} ${i * slice}% ${(i + 1) * slice}%`;
+    return `${shades[i % 2]} ${i * slice}% ${(i + 1) * slice}%`;
   });
-  return `conic-gradient(${stops.join(', ')})`;
+  return `conic-gradient(from -90deg, ${stops.join(', ')})`;
 }
 
-/**
- * 룰렛 조각 라벨과 "정지해야 하는 조각 index" 시퀀스를 순수하게 구성한다.
- * single: 조각 = 참가자 토큰, targetSeq = [당첨자 index] (1스핀).
- * assign: 조각 = 실제로 배정된 outcome id의 집합(등장 순서로 중복 제거, blank 포함),
- *         targetSeq[i] = 참가자 i에게 배정된 id가 그 집합에서 위치한 index.
- */
-export function buildWheel(
-  participants: Participant[],
-  outcomes: Outcome[],
-  result: DrawResult,
-): { slices: string[]; targetSeq: number[] } {
-  if (result.mode === 'single') {
-    const slices = participants.map((p) => p.token);
-    const winnerIdx = participants.findIndex((p) => p.id === result.winnerId);
-    return { slices, targetSeq: [winnerIdx] };
-  }
-  const assignedIds: string[] = [];
-  participants.forEach((p) => {
-    const id = result.assignments[p.id];
-    if (!assignedIds.includes(id)) assignedIds.push(id);
-  });
-  const slices = assignedIds.map((id) => outcomeLabel(outcomes, id));
-  const targetSeq = participants.map((p) => assignedIds.indexOf(result.assignments[p.id]));
-  return { slices, targetSeq };
-}
-
-export function Roulette({ participants, outcomes, result, onComplete }: Props) {
-  const { slices, targetSeq } = useMemo(
-    () => buildWheel(participants, outcomes, result),
-    [participants, outcomes, result],
-  );
-  const prompts = useMemo(() => {
-    if (result.mode === 'single') return ['돌려서 당첨자를 뽑으세요'];
-    return participants.map((p) => `${p.token} 님 차례 — 돌리세요`);
-  }, [participants, result.mode]);
-
-  const n = slices.length;
+export function Roulette({ items, winnerIndex, onComplete }: Props) {
+  const n = items.length;
   const sliceAngle = 360 / n;
-  const [rotation, setRotation] = useState(0);
-  const [spinning, setSpinning] = useState(false);
-  const [step, setStep] = useState(0); // 몇 번째 스핀까지 끝났나
   const background = useMemo(() => conicBackground(n), [n]);
-
-  const done = step >= targetSeq.length;
+  const [rotation, setRotation] = useState(0);
+  const [spun, setSpun] = useState(false);
+  const [done, setDone] = useState(false);
 
   const spin = () => {
-    if (spinning || done) return;
-    const targetIdx = targetSeq[step];
-    // 조각 index의 중심을 포인터(상단, 0deg)로 가져오는 회전량 + 넉넉한 바퀴수
-    const base = 360 * 5;
-    const center = targetIdx * sliceAngle + sliceAngle / 2;
-    const next = Math.ceil(rotation / 360) * 360 + base + (360 - center);
-    setSpinning(true);
-    setRotation(next);
+    if (spun) return;
+    // 당첨 조각 중심(상단 포인터 기준)을 포인터로 가져오도록 6바퀴 + 보정 회전
+    const center = winnerIndex * sliceAngle + sliceAngle / 2;
+    setRotation(360 * 6 + (360 - center));
+    setSpun(true);
   };
 
   return (
     <div className="screen roulette">
-      <h2>{done ? '완료!' : prompts[step]}</h2>
+      <p className="eyebrow">룰렛</p>
+      <h2 className="stage-title">{done ? '멈췄어요' : '돌려서 뽑으세요'}</h2>
       <div className="wheel-wrap">
-        <div className="pointer">▼</div>
+        <div className="wheel-pointer" aria-hidden>▾</div>
         <div
           className="wheel"
           style={{ background, transform: `rotate(${rotation}deg)` }}
-          onTransitionEnd={() => {
-            setSpinning(false);
-            setStep((s) => s + 1);
-          }}
-        />
+          onTransitionEnd={() => setDone(true)}
+        >
+          {items.map((label, i) => (
+            <span
+              key={i}
+              className={`wheel-label ${done && i === winnerIndex ? 'is-winner' : ''}`}
+              style={{ transform: `rotate(${i * sliceAngle + sliceAngle / 2}deg)` }}
+            >
+              <span className="wheel-label-text">{label}</span>
+            </span>
+          ))}
+        </div>
+        <div className="wheel-hub" aria-hidden />
       </div>
       {!done ? (
-        <button className="primary" disabled={spinning} onClick={spin}>
+        <button className="btn-primary" onClick={spin} disabled={spun}>
           돌리기
         </button>
       ) : (
-        <button className="primary" onClick={onComplete}>
+        <button className="btn-primary" onClick={onComplete}>
           결과 보기
         </button>
       )}

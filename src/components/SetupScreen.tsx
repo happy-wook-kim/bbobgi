@@ -1,85 +1,90 @@
 import { useState } from 'react';
-import type { Mode } from '../types';
+import type { AnimationKind } from '../types';
+import { assignTokens } from '../engine/tokens';
 
 type Props = {
-  onStart: (names: string[], mode: Mode, outcomeLabels: string[]) => void;
+  kind: AnimationKind;
+  onStart: (items: string[]) => void;
+  onBack: () => void;
 };
 
-export function SetupScreen({ onStart }: Props) {
-  const [names, setNames] = useState<string[]>(['', '']);
-  const [mode, setMode] = useState<Mode>('single');
-  const [outcomes, setOutcomes] = useState<string[]>(['', '']);
+const KIND_LABEL: Record<AnimationKind, string> = {
+  card: '카드 뽑기',
+  roulette: '룰렛',
+  ladder: '사다리타기',
+};
 
-  const trimmedNames = names.map((n) => n.trim()).filter(Boolean);
-  const trimmedOutcomes = outcomes.map((o) => o.trim()).filter(Boolean);
-  const canStart = trimmedNames.length >= 2 && (mode === 'single' || trimmedOutcomes.length >= 1);
-
-  const setAt = (list: string[], i: number, v: string) =>
-    list.map((x, idx) => (idx === i ? v : x));
-
+export function SetupScreen({ kind, onStart, onBack }: Props) {
   return (
     <div className="screen setup">
-      <h1>🎲 뽑기</h1>
+      <button className="btn-ghost back" onClick={onBack}>
+        ← 연출 바꾸기
+      </button>
+      <p className="eyebrow">{KIND_LABEL[kind]}</p>
+      {kind === 'card' ? <CardSetup onStart={onStart} /> : <NameSetup onStart={onStart} />}
+    </div>
+  );
+}
 
-      <section>
-        <h2>참가자</h2>
+function CardSetup({ onStart }: { onStart: (items: string[]) => void }) {
+  const [count, setCount] = useState(3);
+  return (
+    <>
+      <h1 className="setup-title">몇 명이 뽑나요?</h1>
+      <div className="stepper">
+        <button
+          className="step-btn"
+          onClick={() => setCount((c) => Math.max(2, c - 1))}
+          disabled={count <= 2}
+          aria-label="한 명 줄이기"
+        >
+          −
+        </button>
+        <span className="step-count">{count}</span>
+        <button
+          className="step-btn"
+          onClick={() => setCount((c) => Math.min(12, c + 1))}
+          disabled={count >= 12}
+          aria-label="한 명 늘리기"
+        >
+          +
+        </button>
+      </div>
+      <p className="hint">{count}장의 카드가 깔려요. 각자 한 장씩 뽑으세요.</p>
+      <button className="btn-primary" onClick={() => onStart(assignTokens(count))}>
+        카드 깔기
+      </button>
+    </>
+  );
+}
+
+function NameSetup({ onStart }: { onStart: (items: string[]) => void }) {
+  const [names, setNames] = useState<string[]>(['', '']);
+  const trimmed = names.map((n) => n.trim()).filter(Boolean);
+  const canStart = trimmed.length >= 2;
+
+  return (
+    <>
+      <h1 className="setup-title">누가 참여하나요?</h1>
+      <div className="name-list">
         {names.map((name, i) => (
           <input
             key={i}
-            placeholder="참가자 이름"
+            className="name-input"
+            placeholder={`참가자 ${i + 1}`}
             value={name}
-            onChange={(e) => setNames(setAt(names, i, e.target.value))}
+            onChange={(e) =>
+              setNames((ns) => ns.map((x, idx) => (idx === i ? e.target.value : x)))
+            }
           />
         ))}
-        <button type="button" onClick={() => setNames([...names, ''])}>
-          + 참가자 추가
-        </button>
-      </section>
-
-      <section>
-        <h2>모드</h2>
-        <label>
-          <input
-            type="radio"
-            checked={mode === 'single'}
-            onChange={() => setMode('single')}
-          />
-          한 명 당첨
-        </label>
-        <label>
-          <input
-            type="radio"
-            checked={mode === 'assign'}
-            onChange={() => setMode('assign')}
-          />
-          각자 배정
-        </label>
-      </section>
-
-      {mode === 'assign' && (
-        <section>
-          <h2>결과 항목</h2>
-          {outcomes.map((oc, i) => (
-            <input
-              key={i}
-              placeholder="결과 (예: 전액)"
-              value={oc}
-              onChange={(e) => setOutcomes(setAt(outcomes, i, e.target.value))}
-            />
-          ))}
-          <button type="button" onClick={() => setOutcomes([...outcomes, ''])}>
-            + 결과 추가
-          </button>
-        </section>
-      )}
-
-      <button
-        className="primary"
-        disabled={!canStart}
-        onClick={() => onStart(trimmedNames, mode, mode === 'assign' ? trimmedOutcomes : [])}
-      >
+      </div>
+      <button className="btn-ghost" onClick={() => setNames((ns) => [...ns, ''])}>
+        + 참가자 추가
+      </button>
+      <button className="btn-primary" disabled={!canStart} onClick={() => onStart(trimmed)}>
         시작
       </button>
-    </div>
+    </>
   );
 }

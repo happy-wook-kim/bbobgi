@@ -1,31 +1,21 @@
-import type { Participant, Outcome, DrawResult } from '../types';
-import { outcomeLabel } from '../labels';
+import type { AnimationKind } from '../types';
 
 type Props = {
-  participants: Participant[];
-  outcomes: Outcome[];
-  result: DrawResult;
+  winner: string;
+  kind: AnimationKind;
   onRestart: () => void;
 };
 
-export function ResultScreen({ participants, outcomes, result, onRestart }: Props) {
+export function ResultScreen({ winner, kind, onRestart }: Props) {
+  const isCard = kind === 'card';
   return (
     <div className="screen result">
-      <h2>🎉 결과</h2>
-      {result.mode === 'single' ? (
-        <div className="winner">
-          {participants.find((p) => p.id === result.winnerId)?.name} 님 당첨!
-        </div>
-      ) : (
-        <ul className="assign-list">
-          {participants.map((p) => (
-            <li key={p.id}>
-              <strong>{p.name}</strong> → {outcomeLabel(outcomes, result.assignments[p.id])}
-            </li>
-          ))}
-        </ul>
-      )}
-      <button className="primary" onClick={onRestart}>
+      <p className="eyebrow">{isCard ? '당첨 카드' : '오늘의 주인공'}</p>
+      <div className="result-winner">{winner}</div>
+      <p className="result-sub">
+        {isCard ? '이 카드를 뽑은 분이 쏘기로 했어요 ☕' : '님이 오늘 쏘기로 했어요 ☕'}
+      </p>
+      <button className="btn-primary" onClick={onRestart}>
         다시하기
       </button>
     </div>

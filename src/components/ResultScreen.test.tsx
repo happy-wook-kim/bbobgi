@@ -1,38 +1,24 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ResultScreen } from './ResultScreen';
-import type { Participant, Outcome } from '../types';
-
-const parts: Participant[] = [
-  { id: 'p-0', name: '철수', token: '🍎 사과' },
-  { id: 'p-1', name: '영희', token: '🍌 바나나' },
-];
 
 describe('ResultScreen', () => {
-  it('single 모드에서 당첨자 이름을 보여준다', () => {
-    render(
-      <ResultScreen
-        participants={parts}
-        outcomes={[]}
-        result={{ mode: 'single', winnerId: 'p-1' }}
-        onRestart={vi.fn()}
-      />,
-    );
-    expect(screen.getByText(/영희/)).toBeInTheDocument();
+  it('이름 모드에서 당첨자 이름과 문구를 보여준다', () => {
+    render(<ResultScreen winner="영희" kind="roulette" onRestart={vi.fn()} />);
+    expect(screen.getByText('영희')).toBeInTheDocument();
+    expect(screen.getByText(/오늘 쏘기로 했어요/)).toBeInTheDocument();
   });
 
-  it('assign 모드에서 참가자별 결과를 보여준다', () => {
-    const outcomes: Outcome[] = [{ id: 'o-0', label: '전액' }, { id: 'o-1', label: '반값' }];
-    render(
-      <ResultScreen
-        participants={parts}
-        outcomes={outcomes}
-        result={{ mode: 'assign', assignments: { 'p-0': 'o-0', 'p-1': 'o-1' } }}
-        onRestart={vi.fn()}
-      />,
-    );
-    expect(screen.getByText(/철수/)).toBeInTheDocument();
-    expect(screen.getByText(/전액/)).toBeInTheDocument();
-    expect(screen.getByText(/반값/)).toBeInTheDocument();
+  it('카드 모드에서 당첨 카드 토큰과 카드 문구를 보여준다', () => {
+    render(<ResultScreen winner="🍎 사과" kind="card" onRestart={vi.fn()} />);
+    expect(screen.getByText('🍎 사과')).toBeInTheDocument();
+    expect(screen.getByText(/이 카드를 뽑은 분/)).toBeInTheDocument();
+  });
+
+  it('다시하기를 누르면 onRestart가 호출된다', async () => {
+    const onRestart = vi.fn();
+    render(<ResultScreen winner="철수" kind="ladder" onRestart={onRestart} />);
+    screen.getByRole('button', { name: '다시하기' }).click();
+    expect(onRestart).toHaveBeenCalled();
   });
 });
