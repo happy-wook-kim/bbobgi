@@ -31,6 +31,7 @@ export function Roulette({ items, onComplete }: Props) {
   const background = useMemo(() => conicBackground(n), [n]);
 
   const [rotation, setRotation] = useState(0);
+  const [current, setCurrent] = useState(0); // 지금 포인터가 가리키는 조각
   const [spinning, setSpinning] = useState(false);
   const [landed, setLanded] = useState(-1); // 최종적으로 멈춘 자리의 조각 = 당첨
   const [reveal, setReveal] = useState(false); // 잠깐 뒤 당첨 연출 표시
@@ -52,11 +53,14 @@ export function Roulette({ items, onComplete }: Props) {
     const start = performance.now();
     const step = (now: number) => {
       const t = Math.min((now - start) / dur, 1);
-      setRotation(fromR + easeInOut(t) * (toR - fromR));
+      const rot = fromR + easeInOut(t) * (toR - fromR);
+      setRotation(rot);
+      setCurrent(pointerIndex(rot));
       if (t < 1) {
         rafRef.current = requestAnimationFrame(step);
       } else {
         setRotation(toR);
+        setCurrent(pointerIndex(toR));
         onEnd();
       }
     };
@@ -107,7 +111,7 @@ export function Roulette({ items, onComplete }: Props) {
     <div className="screen roulette">
       <p className="eyebrow">룰렛</p>
       <h2 className="stage-title">
-        {spinning ? '누가 걸릴까…' : done ? '멈췄어요' : '돌려서 뽑으세요'}
+        {spinning ? items[current] : done ? items[landed] : '돌려서 뽑으세요'}
       </h2>
       <div className="wheel-wrap">
         <div className="wheel-pointer" aria-hidden>▾</div>
