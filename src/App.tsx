@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Mode, Participant, Outcome, Step } from './types';
 import { assignTokens } from './engine/tokens';
 import { SetupScreen } from './components/SetupScreen';
+import { TokenReveal } from './components/TokenReveal';
 
 export default function App() {
   const [step, setStep] = useState<Step>('setup');
@@ -26,10 +27,12 @@ export default function App() {
   return (
     <div className="app">
       {step === 'setup' && <SetupScreen onStart={handleStart} />}
-      {step !== 'setup' && (
+      {step === 'reveal' && (
+        <TokenReveal participants={participants} onDone={() => setStep('choose')} />
+      )}
+      {step === 'choose' && (
         <div className="screen">
-          <p>단계: {step}</p>
-          <p>참가자 {participants.length}명 배정 완료</p>
+          <p>연출 선택 단계 (다음 태스크)</p>
         </div>
       )}
     </div>
