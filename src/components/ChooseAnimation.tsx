@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { AnimationKind } from '../types';
 
 type Props = {
@@ -10,12 +11,48 @@ const OPTIONS: { kind: AnimationKind; icon: string; title: string; desc: string 
   { kind: 'ladder', icon: '🪜', title: '사다리타기', desc: '줄 따라 내려가서' },
 ];
 
+const WORDS = ['커피값', '밥값', '점심값', '술값', '저녁값', '치킨값'];
+
+/** 한 글자씩 치고 → 잠깐 멈췄다 → 한 글자씩 지우고 → 다음 단어로 순환. */
+function useTypewriter(words: string[]) {
+  const [text, setText] = useState('');
+  const [wordIdx, setWordIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const word = words[wordIdx];
+    let timeout: number;
+    if (!deleting) {
+      if (text.length < word.length) {
+        timeout = window.setTimeout(() => setText(word.slice(0, text.length + 1)), 130);
+      } else {
+        timeout = window.setTimeout(() => setDeleting(true), 1400);
+      }
+    } else if (text.length > 0) {
+      timeout = window.setTimeout(() => setText(word.slice(0, text.length - 1)), 70);
+    } else {
+      timeout = window.setTimeout(() => {
+        setDeleting(false);
+        setWordIdx((i) => (i + 1) % words.length);
+      }, 300);
+    }
+    return () => clearTimeout(timeout);
+  }, [text, deleting, wordIdx, words]);
+
+  return text;
+}
+
 export function ChooseAnimation({ onChoose }: Props) {
+  const word = useTypewriter(WORDS);
+
   return (
     <div className="screen choose">
       <header className="hero">
         <h1 className="hero-title">뽑기</h1>
-        <p className="hero-sub">오늘 커피값, 누가 쏠까?</p>
+        <p className="hero-sub">
+          오늘 <span className="type-word">{word}</span>
+          <span className="type-cursor" aria-hidden>|</span>, 누가 쏠까?
+        </p>
       </header>
       <div className="choose-list">
         {OPTIONS.map((opt) => (
