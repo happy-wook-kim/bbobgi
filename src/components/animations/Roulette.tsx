@@ -9,13 +9,16 @@ type Props = {
 // 빨주노초파남보
 const RAINBOW = ['#e53935', '#f57c00', '#fdd835', '#43a047', '#1e88e5', '#3949ab', '#8e24aa'];
 
-/** n등분 원판 배경을 무지개 색으로 칠한다. */
+/**
+ * n등분 원판 배경을 무지개 색으로 칠한다.
+ * 조각 i의 "중앙"이 12시 기준 i*(360/n)도에 오도록 from을 -slice/2로 맞춘다.
+ */
 function conicBackground(n: number): string {
   const slice = 100 / n;
   const stops = Array.from({ length: n }, (_, i) => {
     return `${RAINBOW[i % RAINBOW.length]} ${i * slice}% ${(i + 1) * slice}%`;
   });
-  return `conic-gradient(from -90deg, ${stops.join(', ')})`;
+  return `conic-gradient(from ${-180 / n}deg, ${stops.join(', ')})`;
 }
 
 /**
@@ -38,17 +41,16 @@ export function Roulette({ items, winnerIndex, onComplete }: Props) {
   const [done, setDone] = useState(false);
   const rafRef = useRef(0);
 
-  // 상단 포인터(12시)가 현재 가리키는 조각 인덱스
-  const pointerIndex = (rot: number) =>
-    Math.floor(((((-rot) % 360) + 360) % 360) / sliceAngle) % n;
+  // 상단 포인터(12시)가 현재 가리키는 조각. 조각 중앙이 12시 기준이므로 round.
+  const pointerIndex = (rot: number) => ((Math.round(-rot / sliceAngle) % n) + n) % n;
 
   useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
   const spin = () => {
     if (spinning || done) return;
     setSpinning(true);
-    const center = winnerIndex * sliceAngle + sliceAngle / 2;
-    const target = 360 * 6 + (360 - center);
+    // 당첨 조각 중앙을 12시(포인터)로 가져오는 회전량 + 넉넉한 바퀴수
+    const target = 360 * 6 - winnerIndex * sliceAngle;
 
     // 마지막 거동을 확률적으로: 역방향 튕김 / 정방향 마무리 / 튕김 없음
     const r = Math.random();
@@ -86,7 +88,7 @@ export function Roulette({ items, winnerIndex, onComplete }: Props) {
         <div className="wheel-pointer" aria-hidden>▾</div>
         <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
           {items.map((label, i) => {
-            const angle = i * sliceAngle + sliceAngle / 2;
+            const angle = i * sliceAngle; // 조각 중앙 각도(12시 기준)
             return (
               <span key={i} className="wheel-label" style={{ transform: `rotate(${angle}deg)` }}>
                 {/* 휠 회전(rotation) + 조각 각도를 상쇄해 항상 수평으로 읽히게 */}
