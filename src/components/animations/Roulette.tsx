@@ -8,6 +8,8 @@ type Props = {
 
 // 빨주노초파남보
 const RAINBOW = ['#e53935', '#f57c00', '#fdd835', '#43a047', '#1e88e5', '#3949ab', '#8e24aa'];
+// 각 조각 배경색에 맞춘 진한 동색(글자용)
+const LABEL_COLORS = ['#8e1a17', '#964c00', '#8f7500', '#1e5a21', '#0f4a80', '#202766', '#4e1460'];
 
 /** n등분 원판 배경을 무지개 색으로 칠한다. 조각 i의 중앙이 12시 기준 i*(360/n)도. */
 function conicBackground(n: number): string {
@@ -112,8 +114,8 @@ export function Roulette({ items, onComplete }: Props) {
         <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
           {items.map((label, i) => {
             const angle = i * sliceAngle; // 조각 중앙 각도(12시 기준)
-            // 배경색(그 조각)을 진하게 처리한 동색 글자 → 배경 위에서 또렷하게
-            const shade = `color-mix(in srgb, ${RAINBOW[i % RAINBOW.length]} 58%, #000000)`;
+            // 그 조각 배경색에 맞춘 진한 동색 글자 → 배경 위에서 또렷하게
+            const shade = LABEL_COLORS[i % LABEL_COLORS.length];
             // 라벨을 원판 표면에 고정 → 원판과 하나로 함께 회전한다.
             return (
               <span key={i} className="wheel-label" style={{ transform: `rotate(${angle}deg)` }}>
