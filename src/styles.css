@@ -189,6 +189,12 @@ body {
 .ladder-rung { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
 .ladder-node { fill: var(--ink); }
 .ladder-exit { font-size: 16px; fill: var(--muted); }
+.ladder-entry { font-size: 13px; fill: var(--ink); font-weight: 700; }
+.ladder-portal { font-size: 20px; }
+.ladder-marker {
+  fill: var(--accent); stroke: #fff; stroke-width: 2.5;
+  transition: cx 0.22s linear, cy 0.22s linear;
+}
 .ladder-trace {
   fill: none; stroke: var(--muted); stroke-width: 4;
   stroke-linecap: round; stroke-linejoin: round;
