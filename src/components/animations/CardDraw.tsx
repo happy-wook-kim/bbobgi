@@ -57,7 +57,7 @@ export function CardDraw({ items, winnerIndex, onComplete }: Props) {
       {reveal && (
         <WinnerBurst
           overlay
-          label={items[winnerIndex]}
+          label="🎯"
           sub="이 카드를 뽑은 분이 쏘기로 했어요 ☕"
           onRestart={onComplete}
         />
