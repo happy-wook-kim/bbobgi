@@ -158,8 +158,11 @@ body {
 }
 .flip-card.is-winner .flip-front {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(67, 56, 255, 0.2);
-  animation: pop 0.5s ease;
+  animation: winner-glow 0.9s ease-in-out infinite alternate;
+}
+@keyframes winner-glow {
+  from { box-shadow: 0 0 0 2px rgba(67, 56, 255, 0.25); }
+  to { box-shadow: 0 0 0 6px rgba(67, 56, 255, 0.45); }
 }
 
 /* roulette */
