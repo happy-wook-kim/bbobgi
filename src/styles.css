@@ -18,7 +18,7 @@ body {
 }
 
 .app {
-  max-width: 720px;
+  max-width: 480px;
   margin: 0 auto;
   padding: 32px 20px 48px;
   min-height: 100dvh;
@@ -120,14 +120,18 @@ body {
 }
 .name-input:focus { outline: none; border-color: var(--ink); }
 
-/* card flip */
+/* card flip — 카드 화면만 뷰포트 전체 폭으로 펼쳐 크게 */
+.screen.cards {
+  width: 100vw; max-width: 100vw;
+  margin-left: calc(50% - 50vw); padding: 0 16px;
+}
 .card-grid {
-  display: flex; flex-wrap: wrap; gap: 12px;
-  justify-content: center; perspective: 1400px; width: 100%;
+  display: flex; flex-wrap: wrap; gap: 14px;
+  justify-content: center; perspective: 1600px; width: 100%;
 }
 .flip-card {
   flex: 0 0 auto;
-  width: min(19vw, 126px); aspect-ratio: 3 / 4; padding: 0;
+  width: min(28vw, 189px); aspect-ratio: 3 / 4; padding: 0;
   border: none; background: transparent; cursor: pointer;
 }
 .flip-card:disabled { cursor: default; }
@@ -140,9 +144,9 @@ body {
 .flip-face {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 16px; backface-visibility: hidden; font-size: 46px;
+  border-radius: 18px; backface-visibility: hidden; font-size: 70px;
 }
-.flip-back { background: var(--ink); color: #fff; font-size: 50px; }
+.flip-back { background: var(--ink); color: #fff; font-size: 75px; }
 .flip-front {
   background: var(--surface); border: 1px solid var(--line);
   transform: rotateY(180deg);
