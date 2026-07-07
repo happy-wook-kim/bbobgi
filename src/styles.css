@@ -33,3 +33,12 @@ h1 { font-size: 40px; }
   align-items: center; justify-content: center; text-align: center; padding: 6px;
 }
 .card.flipped { background: #fff; color: #1d1d1f; border: 2px solid #0071e3; }
+.wheel-wrap { position: relative; width: 260px; height: 260px; }
+.pointer {
+  position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+  font-size: 24px; color: #1d1d1f; z-index: 2;
+}
+.wheel {
+  width: 260px; height: 260px; border-radius: 50%;
+  border: 4px solid #1d1d1f; transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
