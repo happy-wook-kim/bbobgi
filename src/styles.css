@@ -168,15 +168,15 @@ body {
   border: 7px solid var(--ink); will-change: transform;
 }
 .wheel-label {
-  position: absolute; inset: 0; display: flex; justify-content: center;
+  position: absolute; left: 0; top: 0; width: 100%; height: 50%;
+  transform-origin: center bottom; display: flex; justify-content: center;
 }
 .wheel-label-text {
-  display: block; margin-top: 24%; font-size: clamp(15px, 4vw, 22px); font-weight: 700;
-  color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
-  max-width: 26%; overflow: hidden; text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-top: 10%; font-size: clamp(14px, 3.8vw, 21px); font-weight: 700;
+  color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.wheel-label.is-winner .wheel-label-text { font-size: clamp(17px, 4.6vw, 25px); font-weight: 800; }
+.wheel-label-text.is-winner { font-size: clamp(16px, 4.4vw, 24px); font-weight: 800; }
 .wheel-center {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 42%; height: 42%; border-radius: 50%;

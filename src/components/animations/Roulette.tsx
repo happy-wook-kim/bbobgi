@@ -18,7 +18,11 @@ function conicBackground(n: number): string {
   return `conic-gradient(from -90deg, ${stops.join(', ')})`;
 }
 
-/** 끝에서 살짝 넘쳤다가 되돌아오는 이징. s가 클수록 튕김이 강하다. */
+/**
+ * back 이징. s > 0이면 목표를 넘쳤다 되돌아오고(역방향 튕김),
+ * s < 0이면 목표에 못 미쳤다 마지막에 더 나아가며(정방향 마무리),
+ * s = 0이면 튕김 없이 부드럽게 멈춘다. 어느 경우든 t=1에서 정확히 1.
+ */
 function easeOutBack(t: number, s: number): number {
   return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
 }
@@ -45,13 +49,16 @@ export function Roulette({ items, winnerIndex, onComplete }: Props) {
     setSpinning(true);
     const center = winnerIndex * sliceAngle + sliceAngle / 2;
     const target = 360 * 6 + (360 - center);
-    const overshoot = 0.8 + Math.random() * 1.6; // 랜덤 튕김 세기
+
+    // 마지막 거동을 확률적으로: 역방향 튕김 / 정방향 마무리 / 튕김 없음
+    const r = Math.random();
+    const s = r < 0.4 ? 0.9 + Math.random() * 1.4 : r < 0.75 ? -(0.4 + Math.random() * 0.7) : 0;
     const duration = 4200 + Math.random() * 900;
     const start = performance.now();
 
     const step = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
-      const rot = easeOutBack(t, overshoot) * target;
+      const rot = easeOutBack(t, s) * target;
       setRotation(rot);
       setCurrent(pointerIndex(rot));
       if (t < 1) {
@@ -78,15 +85,20 @@ export function Roulette({ items, winnerIndex, onComplete }: Props) {
       <div className="wheel-wrap">
         <div className="wheel-pointer" aria-hidden>▾</div>
         <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
-          {items.map((label, i) => (
-            <span
-              key={i}
-              className={`wheel-label ${done && i === winnerIndex ? 'is-winner' : ''}`}
-              style={{ transform: `rotate(${i * sliceAngle + sliceAngle / 2}deg)` }}
-            >
-              <span className="wheel-label-text">{label}</span>
-            </span>
-          ))}
+          {items.map((label, i) => {
+            const angle = i * sliceAngle + sliceAngle / 2;
+            return (
+              <span key={i} className="wheel-label" style={{ transform: `rotate(${angle}deg)` }}>
+                {/* 휠 회전(rotation) + 조각 각도를 상쇄해 항상 수평으로 읽히게 */}
+                <span
+                  className={`wheel-label-text ${done && i === winnerIndex ? 'is-winner' : ''}`}
+                  style={{ transform: `rotate(${-(angle + rotation)}deg)` }}
+                >
+                  {label}
+                </span>
+              </span>
+            );
+          })}
         </div>
         <div className="wheel-center" style={{ color: active ? centerColor : undefined }}>
           {active ? items[current] : '?'}
