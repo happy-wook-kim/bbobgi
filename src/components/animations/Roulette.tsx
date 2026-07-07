@@ -23,9 +23,9 @@ function conicBackground(n: number): string {
   return `conic-gradient(from ${-180 / n}deg, ${stops.join(', ')})`;
 }
 
-/** 감속 이징 (빠르게 → 느리게 멈춤). */
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
+/** 느리게 시작 → 빨라짐 → 느리게 멈춤. 손으로 돌리는 느낌. */
+function easeInOut(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Props) {
@@ -50,12 +50,12 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
     setDone(true);
   };
 
-  // fromR → toR 로 dur동안 감속 회전. 끝나면 onEnd.
+  // fromR → toR 로 dur동안 ease-in-out 회전. 끝나면 onEnd.
   const runPhase = (fromR: number, toR: number, dur: number, onEnd: () => void) => {
     const start = performance.now();
     const step = (now: number) => {
       const t = Math.min((now - start) / dur, 1);
-      const rot = fromR + easeOutCubic(t) * (toR - fromR);
+      const rot = fromR + easeInOut(t) * (toR - fromR);
       setRotation(rot);
       setCurrent(pointerIndex(rot));
       if (t < 1) {
@@ -79,32 +79,26 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
     const turns = 5 + Math.floor(Math.random() * 5);
     const base = (Math.floor(from / 360) + turns) * 360 + finalMod;
 
-    // 멈춘 듯한 지점(fakeTarget)에서 서고, 확률적으로 보너스 회전으로 base(당첨)에 안착.
-    const r = Math.random();
-    let fakeTarget: number;
-    let hasBonus: boolean;
-    if (r < 0.4) {
-      fakeTarget = base; // 보너스 없음: 바로 당첨에서 멈춤
-      hasBonus = false;
-    } else if (r < 0.72) {
-      // 정방향 보너스: 당첨 직전에 멈췄다가 → 조금 더 정방향으로
-      fakeTarget = base - sliceAngle * (0.5 + Math.random() * 0.9);
-      hasBonus = true;
-    } else {
-      // 역방향 보너스: 당첨을 살짝 지나 멈췄다가 → 뒤로 되돌아
-      fakeTarget = base + sliceAngle * (0.5 + Math.random() * 0.9);
-      hasBonus = true;
+    // 보너스: 있을 수도 없을 수도(60%), 크기는 랜덤(제곱 분포 → 작은 게 자주, 큰 게 가끔).
+    // 크면 여러 바퀴만큼 되돌아가기도 한다. 정/역 방향도 랜덤.
+    const hasBonus = Math.random() < 0.6;
+    let fakeTarget = base;
+    if (hasBonus) {
+      const forward = Math.random() < 0.5;
+      const mag = Math.pow(Math.random(), 2) * 540; // 0 ~ 약 1.5바퀴
+      fakeTarget = forward ? base - mag : base + mag;
     }
+    const bonusMag = Math.abs(base - fakeTarget);
 
-    const dur1 = 3600 + Math.random() * 1400;
+    const dur1 = 3600 + Math.random() * 1600;
     runPhase(from, fakeTarget, dur1, () => {
-      if (!hasBonus) {
+      if (bonusMag < 1) {
         finish();
         return;
       }
-      // "끝난 줄 알았지" 하는 짧은 정지 후 보너스 회전
+      // "끝난 줄 알았지" 하는 짧은 정지 후 보너스 회전(양만큼 시간도 늘어남)
       pauseRef.current = window.setTimeout(() => {
-        runPhase(fakeTarget, base, 750 + Math.random() * 500, finish);
+        runPhase(fakeTarget, base, 600 + bonusMag * 1.6, finish);
       }, 420);
     });
   };
