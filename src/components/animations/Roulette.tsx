@@ -23,18 +23,9 @@ function conicBackground(n: number): string {
   return `conic-gradient(from ${-180 / n}deg, ${stops.join(', ')})`;
 }
 
-/**
- * back 이징. s > 0이면 목표를 넘쳤다 되돌아오고(역방향 튕김),
- * s < 0이면 목표에 못 미쳤다 마지막에 더 나아가며(정방향 마무리),
- * s = 0이면 튕김 없이 부드럽게 멈춘다. 어느 경우든 t=1에서 정확히 1.
- */
-function easeOutBack(t: number, s: number): number {
-  return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
-}
-
-/** 느리게 시작 → 빨라짐 → 느리게 멈춤. 역방향 회전에 쓴다. */
-function easeInOut(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+/** 감속 이징 (빠르게 → 느리게 멈춤). */
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
 }
 
 export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Props) {
@@ -47,54 +38,75 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
   const [spinning, setSpinning] = useState(false);
   const [done, setDone] = useState(false);
   const rafRef = useRef(0);
+  const pauseRef = useRef(0);
   const firstRef = useRef(true);
 
   // 상단 포인터(12시)가 현재 가리키는 조각. 조각 중앙이 12시 기준이므로 round.
   const pointerIndex = (rot: number) => ((Math.round(-rot / sliceAngle) % n) + n) % n;
+
+  const finish = () => {
+    setCurrent(winnerIndex);
+    setSpinning(false);
+    setDone(true);
+  };
+
+  // fromR → toR 로 dur동안 감속 회전. 끝나면 onEnd.
+  const runPhase = (fromR: number, toR: number, dur: number, onEnd: () => void) => {
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min((now - start) / dur, 1);
+      const rot = fromR + easeOutCubic(t) * (toR - fromR);
+      setRotation(rot);
+      setCurrent(pointerIndex(rot));
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        setRotation(toR);
+        onEnd();
+      }
+    };
+    rafRef.current = requestAnimationFrame(step);
+  };
 
   const spin = () => {
     if (spinning) return;
     setSpinning(true);
     setDone(false);
 
-    // 현재 회전에서 이어서 누적. 방향·바퀴 수·시간·튕김을 매번 랜덤화.
+    // 메인 회전은 항상 정방향. 당첨 조각 중앙(12시)까지 여러 바퀴.
     const from = rotation;
     const finalMod = ((((-winnerIndex * sliceAngle) % 360) + 360) % 360);
-    const turns = 5 + Math.floor(Math.random() * 5); // 5~9바퀴 (역방향도 여러 바퀴)
-    const reverse = Math.random() < 0.4; // 40% 역방향
-    const target = reverse
-      ? (Math.floor(from / 360) - turns) * 360 + finalMod
-      : (Math.floor(from / 360) + turns) * 360 + finalMod;
-    const delta = target - from;
+    const turns = 5 + Math.floor(Math.random() * 5);
+    const base = (Math.floor(from / 360) + turns) * 360 + finalMod;
 
-    // 정방향: 빠르게 시작 → 감속 + 확률적 튕김(역/정/없음).
-    // 역방향: 느리게 시작 → 빨라짐 → 종료 즈음 감속(ease-in-out).
-    let ease: (t: number) => number;
-    if (reverse) {
-      ease = easeInOut;
+    // 멈춘 듯한 지점(fakeTarget)에서 서고, 확률적으로 보너스 회전으로 base(당첨)에 안착.
+    const r = Math.random();
+    let fakeTarget: number;
+    let hasBonus: boolean;
+    if (r < 0.4) {
+      fakeTarget = base; // 보너스 없음: 바로 당첨에서 멈춤
+      hasBonus = false;
+    } else if (r < 0.72) {
+      // 정방향 보너스: 당첨 직전에 멈췄다가 → 조금 더 정방향으로
+      fakeTarget = base - sliceAngle * (0.5 + Math.random() * 0.9);
+      hasBonus = true;
     } else {
-      const r = Math.random();
-      const s = r < 0.4 ? 0.9 + Math.random() * 1.4 : r < 0.75 ? -(0.4 + Math.random() * 0.7) : 0;
-      ease = (t) => easeOutBack(t, s);
+      // 역방향 보너스: 당첨을 살짝 지나 멈췄다가 → 뒤로 되돌아
+      fakeTarget = base + sliceAngle * (0.5 + Math.random() * 0.9);
+      hasBonus = true;
     }
-    const duration = 3800 + Math.random() * 1600;
-    const start = performance.now();
 
-    const step = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const rot = from + ease(t) * delta;
-      setRotation(rot);
-      setCurrent(pointerIndex(rot));
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(step);
-      } else {
-        setRotation(target);
-        setCurrent(winnerIndex);
-        setSpinning(false);
-        setDone(true);
+    const dur1 = 3600 + Math.random() * 1400;
+    runPhase(from, fakeTarget, dur1, () => {
+      if (!hasBonus) {
+        finish();
+        return;
       }
-    };
-    rafRef.current = requestAnimationFrame(step);
+      // "끝난 줄 알았지" 하는 짧은 정지 후 보너스 회전
+      pauseRef.current = window.setTimeout(() => {
+        runPhase(fakeTarget, base, 750 + Math.random() * 500, finish);
+      }, 420);
+    });
   };
 
   // "다시 돌리기"(nonce 증가) 시 바로 재회전. 첫 마운트는 건너뛴다.
@@ -107,7 +119,13 @@ export function Roulette({ items, winnerIndex, nonce, onComplete, onReplay }: Pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce]);
 
-  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(rafRef.current);
+      clearTimeout(pauseRef.current);
+    },
+    [],
+  );
 
   const active = spinning || done;
   const centerColor = RAINBOW[current % RAINBOW.length];
