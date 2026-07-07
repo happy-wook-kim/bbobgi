@@ -18,7 +18,7 @@ body {
 }
 
 .app {
-  max-width: 640px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 32px 20px 48px;
   min-height: 100dvh;
@@ -127,7 +127,7 @@ body {
 }
 .flip-card {
   flex: 0 0 auto;
-  width: min(18vw, 110px); aspect-ratio: 3 / 4; padding: 0;
+  width: min(19vw, 126px); aspect-ratio: 3 / 4; padding: 0;
   border: none; background: transparent; cursor: pointer;
 }
 .flip-card:disabled { cursor: default; }
@@ -140,9 +140,9 @@ body {
 .flip-face {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 16px; backface-visibility: hidden; font-size: 40px;
+  border-radius: 16px; backface-visibility: hidden; font-size: 46px;
 }
-.flip-back { background: var(--ink); color: #fff; font-size: 44px; }
+.flip-back { background: var(--ink); color: #fff; font-size: 50px; }
 .flip-front {
   background: var(--surface); border: 1px solid var(--line);
   transform: rotateY(180deg);
