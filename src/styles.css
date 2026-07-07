@@ -26,3 +26,10 @@ h1 { font-size: 40px; }
 .winner { font-size: 28px; font-weight: 700; color: #0071e3; }
 .assign-list { list-style: none; padding: 0; width: 100%; font-size: 18px; }
 .assign-list li { padding: 8px 0; border-bottom: 1px solid #e0e0e5; }
+.card-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.card {
+  width: 96px; height: 128px; font-size: 15px; background: #0071e3; color: #fff;
+  border-radius: 10px; transition: transform 0.3s; display: flex;
+  align-items: center; justify-content: center; text-align: center; padding: 6px;
+}
+.card.flipped { background: #fff; color: #1d1d1f; border: 2px solid #0071e3; }

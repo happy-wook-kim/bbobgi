@@ -5,6 +5,7 @@ import { draw } from './engine/draw';
 import { SetupScreen } from './components/SetupScreen';
 import { TokenReveal } from './components/TokenReveal';
 import { ChooseAnimation } from './components/ChooseAnimation';
+import { CardDraw } from './components/animations/CardDraw';
 import { ResultScreen } from './components/ResultScreen';
 
 export default function App() {
@@ -45,12 +46,24 @@ export default function App() {
       )}
       {step === 'choose' && <ChooseAnimation onChoose={handleChoose} />}
       {step === 'animate' && result && (
-        <div className="screen">
-          <p>연출: {kind} (임시 — 다음 태스크에서 교체)</p>
-          <button className="primary" onClick={() => setStep('result')}>
-            결과 보기
-          </button>
-        </div>
+        <>
+          {kind === 'card' && (
+            <CardDraw
+              participants={participants}
+              outcomes={outcomes}
+              result={result}
+              onComplete={() => setStep('result')}
+            />
+          )}
+          {kind !== 'card' && (
+            <div className="screen">
+              <p>연출: {kind} (다음 태스크에서 교체)</p>
+              <button className="primary" onClick={() => setStep('result')}>
+                결과 보기
+              </button>
+            </div>
+          )}
+        </>
       )}
       {step === 'result' && result && (
         <ResultScreen
