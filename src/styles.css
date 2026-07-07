@@ -1,0 +1,18 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+.app { max-width: 640px; margin: 0 auto; padding: 24px 16px; }
+.screen { display: flex; flex-direction: column; gap: 16px; align-items: center; }
+.setup section { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+input { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; }
+button {
+  padding: 10px 16px; font-size: 16px; border: none; border-radius: 8px;
+  background: #e0e0e5; cursor: pointer;
+}
+button.primary { background: #0071e3; color: #fff; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+h1 { font-size: 40px; }
