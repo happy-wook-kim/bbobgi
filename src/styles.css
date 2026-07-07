@@ -74,6 +74,7 @@ body {
   padding: 8px;
 }
 .btn-ghost:hover { color: var(--ink); }
+.btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
 
 /* hero + choose */
 .hero { text-align: center; }

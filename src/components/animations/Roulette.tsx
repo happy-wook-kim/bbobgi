@@ -4,6 +4,7 @@ type Props = {
   items: string[];
   winnerIndex: number;
   onComplete: () => void;
+  onReplay: () => void;
 };
 
 // 빨주노초파남보
@@ -30,7 +31,7 @@ function easeOutBack(t: number, s: number): number {
   return 1 + (s + 1) * Math.pow(t - 1, 3) + s * Math.pow(t - 1, 2);
 }
 
-export function Roulette({ items, winnerIndex, onComplete }: Props) {
+export function Roulette({ items, winnerIndex, onComplete, onReplay }: Props) {
   const n = items.length;
   const sliceAngle = 360 / n;
   const background = useMemo(() => conicBackground(n), [n]);
@@ -89,13 +90,10 @@ export function Roulette({ items, winnerIndex, onComplete }: Props) {
         <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
           {items.map((label, i) => {
             const angle = i * sliceAngle; // 조각 중앙 각도(12시 기준)
+            // 라벨을 원판 표면에 고정 → 원판과 하나로 함께 회전한다.
             return (
               <span key={i} className="wheel-label" style={{ transform: `rotate(${angle}deg)` }}>
-                {/* 휠 회전(rotation) + 조각 각도를 상쇄해 항상 수평으로 읽히게 */}
-                <span
-                  className={`wheel-label-text ${done && i === winnerIndex ? 'is-winner' : ''}`}
-                  style={{ transform: `rotate(${-(angle + rotation)}deg)` }}
-                >
+                <span className={`wheel-label-text ${done && i === winnerIndex ? 'is-winner' : ''}`}>
                   {label}
                 </span>
               </span>
@@ -111,9 +109,14 @@ export function Roulette({ items, winnerIndex, onComplete }: Props) {
           돌리기
         </button>
       ) : (
-        <button className="btn-primary" onClick={onComplete}>
-          결과 보기
-        </button>
+        <div className="btn-row">
+          <button className="btn-primary" onClick={onComplete}>
+            결과 보기
+          </button>
+          <button className="btn-ghost" onClick={onReplay}>
+            다시 돌리기 (테스트)
+          </button>
+        </div>
       )}
     </div>
   );

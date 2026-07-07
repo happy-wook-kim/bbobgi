@@ -13,6 +13,7 @@ export default function App() {
   const [kind, setKind] = useState<AnimationKind | null>(null);
   const [items, setItems] = useState<string[]>([]);
   const [winnerIndex, setWinnerIndex] = useState(-1);
+  const [spinKey, setSpinKey] = useState(0);
 
   const handleChoose = (chosen: AnimationKind) => {
     setKind(chosen);
@@ -33,6 +34,12 @@ export default function App() {
     setStep('choose');
   };
 
+  // 임시(테스트용): 같은 참가자로 당첨자를 새로 뽑아 룰렛을 다시 돌린다.
+  const replay = () => {
+    setWinnerIndex(pickWinner(items.length));
+    setSpinKey((k) => k + 1);
+  };
+
   return (
     <div className="app">
       {step === 'choose' && <ChooseAnimation onChoose={handleChoose} />}
@@ -46,7 +53,13 @@ export default function App() {
             <CardDraw items={items} winnerIndex={winnerIndex} onComplete={toChoose} />
           )}
           {kind === 'roulette' && (
-            <Roulette items={items} winnerIndex={winnerIndex} onComplete={() => setStep('result')} />
+            <Roulette
+              key={spinKey}
+              items={items}
+              winnerIndex={winnerIndex}
+              onComplete={() => setStep('result')}
+              onReplay={replay}
+            />
           )}
           {kind === 'ladder' && (
             <Ladder items={items} winnerIndex={winnerIndex} onComplete={() => setStep('result')} />
