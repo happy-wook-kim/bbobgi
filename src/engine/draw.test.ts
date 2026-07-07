@@ -47,4 +47,18 @@ describe('draw - assign', () => {
       expect(values.filter((v) => v.startsWith('blank-')).length).toBe(2);
     }
   });
+
+  it('결과가 참가자보다 많으면 앞에서 참가자 수만큼만 사용한다', () => {
+    const parts = [p('a'), p('b'), p('c')];
+    const outs = [o('x'), o('y'), o('z'), o('w')];
+    const result = draw('assign', parts, outs, Math.random);
+    if (result.mode === 'assign') {
+      const values = Object.values(result.assignments);
+      expect(values).toHaveLength(3);
+      expect(new Set(values).size).toBe(3);
+      values.forEach((v) => {
+        expect(['x', 'y', 'z', 'w']).toContain(v);
+      });
+    }
+  });
 });
