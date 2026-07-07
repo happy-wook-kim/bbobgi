@@ -47,6 +47,7 @@ body {
 }
 
 .stage-title { font-size: 22px; font-weight: 700; margin: 0; }
+.roulette .stage-title { font-size: clamp(26px, 6.5vw, 36px); }
 .hint { color: var(--muted); font-size: 14px; margin: 0; }
 
 /* buttons */
@@ -179,6 +180,7 @@ body {
 .wheel-label-text {
   margin-top: 5%; font-size: clamp(28px, 7.5vw, 42px); font-weight: 800;
   max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
 }
 .wheel-label-text.is-winner { font-size: clamp(32px, 8.6vw, 48px); font-weight: 800; }
 

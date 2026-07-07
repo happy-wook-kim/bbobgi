@@ -8,8 +8,8 @@ type Props = {
 
 // 빨주노초파남보
 const RAINBOW = ['#e53935', '#f57c00', '#fdd835', '#43a047', '#1e88e5', '#3949ab', '#8e24aa'];
-// 각 조각 배경색과 같은 색상(hue)의 채도를 살린 진한 글자색 → 칸마다 색이 뚜렷이 구분됨
-const LABEL_COLORS = ['#b52521', '#c25e00', '#b38f00', '#1b7d30', '#1466b8', '#2e39a3', '#7a1fa5'];
+// 각 조각 배경색의 밝고 선명한 동색(검정처럼 어둡지 않게) — 어두운 외곽선으로 배경 위 대비
+const LABEL_COLORS = ['#ff5b57', '#ff9d3d', '#ffd21f', '#57c95f', '#4aa0ee', '#7079e8', '#c064e0'];
 
 /** n등분 원판 배경을 무지개 색으로 칠한다. 조각 i의 중앙이 12시 기준 i*(360/n)도. */
 function conicBackground(n: number): string {
