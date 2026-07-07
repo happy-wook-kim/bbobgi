@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Participant, Outcome, DrawResult } from '../../types';
+import { outcomeLabel } from '../../labels';
 
 type Props = {
   participants: Participant[];
@@ -7,9 +8,6 @@ type Props = {
   result: DrawResult;
   onComplete: () => void;
 };
-
-const labelOf = (outcomes: Outcome[], outcomeId: string) =>
-  outcomeId.startsWith('blank-') ? '꽝' : outcomes.find((o) => o.id === outcomeId)?.label ?? outcomeId;
 
 export function CardDraw({ participants, outcomes, result, onComplete }: Props) {
   const [flipped, setFlipped] = useState<number[]>([]);
@@ -60,7 +58,7 @@ export function CardDraw({ participants, outcomes, result, onComplete }: Props) 
               onClick={() => setFlipped((f) => [...f, i])}
             >
               {owner
-                ? `${owner.token} → ${labelOf(outcomes, assignments[owner.id])}`
+                ? `${owner.token} → ${outcomeLabel(outcomes, assignments[owner.id])}`
                 : '?'}
             </button>
           );

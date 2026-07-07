@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Participant, Outcome, DrawResult } from '../../types';
+import { outcomeLabel } from '../../labels';
 
 type Props = {
   participants: Participant[];
@@ -19,25 +20,41 @@ function conicBackground(n: number): string {
   return `conic-gradient(${stops.join(', ')})`;
 }
 
+/**
+ * 룰렛 조각 라벨과 "정지해야 하는 조각 index" 시퀀스를 순수하게 구성한다.
+ * single: 조각 = 참가자 토큰, targetSeq = [당첨자 index] (1스핀).
+ * assign: 조각 = 실제로 배정된 outcome id의 집합(등장 순서로 중복 제거, blank 포함),
+ *         targetSeq[i] = 참가자 i에게 배정된 id가 그 집합에서 위치한 index.
+ */
+export function buildWheel(
+  participants: Participant[],
+  outcomes: Outcome[],
+  result: DrawResult,
+): { slices: string[]; targetSeq: number[] } {
+  if (result.mode === 'single') {
+    const slices = participants.map((p) => p.token);
+    const winnerIdx = participants.findIndex((p) => p.id === result.winnerId);
+    return { slices, targetSeq: [winnerIdx] };
+  }
+  const assignedIds: string[] = [];
+  participants.forEach((p) => {
+    const id = result.assignments[p.id];
+    if (!assignedIds.includes(id)) assignedIds.push(id);
+  });
+  const slices = assignedIds.map((id) => outcomeLabel(outcomes, id));
+  const targetSeq = participants.map((p) => assignedIds.indexOf(result.assignments[p.id]));
+  return { slices, targetSeq };
+}
+
 export function Roulette({ participants, outcomes, result, onComplete }: Props) {
-  // 룰렛 조각 라벨과 "정지해야 하는 조각 index" 시퀀스를 구성
-  const { slices, targetSeq, prompts } = useMemo(() => {
-    if (result.mode === 'single') {
-      const s = participants.map((p) => p.token);
-      const winnerIdx = participants.findIndex((p) => p.id === result.winnerId);
-      return { slices: s, targetSeq: [winnerIdx], prompts: ['돌려서 당첨자를 뽑으세요'] };
-    }
-    const s = outcomes.length
-      ? outcomes.map((o) => o.label)
-      : participants.map(() => '꽝'); // 방어: outcomes 비면 사용 안 됨
-    const seq = participants.map((p) => {
-      const outcomeId = result.assignments[p.id];
-      const idx = outcomes.findIndex((o) => o.id === outcomeId);
-      return idx >= 0 ? idx : 0;
-    });
-    const pr = participants.map((p) => `${p.token} 님 차례 — 돌리세요`);
-    return { slices: s, targetSeq: seq, prompts: pr };
-  }, [participants, outcomes, result]);
+  const { slices, targetSeq } = useMemo(
+    () => buildWheel(participants, outcomes, result),
+    [participants, outcomes, result],
+  );
+  const prompts = useMemo(() => {
+    if (result.mode === 'single') return ['돌려서 당첨자를 뽑으세요'];
+    return participants.map((p) => `${p.token} 님 차례 — 돌리세요`);
+  }, [participants, result.mode]);
 
   const n = slices.length;
   const sliceAngle = 360 / n;

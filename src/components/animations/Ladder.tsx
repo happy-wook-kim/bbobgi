@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Participant, Outcome, DrawResult } from '../../types';
 import { permToRungs } from '../../engine/ladder';
+import { outcomeLabel } from '../../labels';
 
 type Props = {
   participants: Participant[];
@@ -27,11 +28,9 @@ export function Ladder({ participants, outcomes, result, onComplete }: Props) {
       return { exitLabels: labels, perm: p };
     }
     // assign: 출구 = 참가자 순서대로 배정된 결과 라벨
-    const labelOf = (outcomeId: string) =>
-      outcomeId.startsWith('blank-') ? '꽝' : outcomes.find((o) => o.id === outcomeId)?.label ?? outcomeId;
     // 출구 index를 참가자 순서로 두고, 입구 i → 출구 i 로 두되 라벨을 각 참가자 결과로 매핑하면
     // 사다리 재미가 없으므로, 출구를 섞어 순열을 만든다.
-    const labels = participants.map((p) => labelOf(result.assignments[p.id]));
+    const labels = participants.map((p) => outcomeLabel(outcomes, result.assignments[p.id]));
     // 입구 i(참가자 i) → 출구 perm[i]. 출구 perm[i]의 라벨이 참가자 i의 결과가 되도록 항등 배치 후 셔플 표시.
     // 단순화: 출구 라벨을 참가자 순서대로 두고 perm은 항등(각자 자기 결과). 시각적 사다리는 rung으로 표현.
     const p = Array.from({ length: n }, (_, i) => i);

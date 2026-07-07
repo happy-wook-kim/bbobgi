@@ -1,4 +1,5 @@
 import type { Participant, Outcome, DrawResult } from '../types';
+import { outcomeLabel } from '../labels';
 
 type Props = {
   participants: Participant[];
@@ -8,11 +9,6 @@ type Props = {
 };
 
 export function ResultScreen({ participants, outcomes, result, onRestart }: Props) {
-  const labelOf = (outcomeId: string) => {
-    if (outcomeId.startsWith('blank-')) return '꽝';
-    return outcomes.find((o) => o.id === outcomeId)?.label ?? outcomeId;
-  };
-
   return (
     <div className="screen result">
       <h2>🎉 결과</h2>
@@ -24,7 +20,7 @@ export function ResultScreen({ participants, outcomes, result, onRestart }: Prop
         <ul className="assign-list">
           {participants.map((p) => (
             <li key={p.id}>
-              <strong>{p.name}</strong> → {labelOf(result.assignments[p.id])}
+              <strong>{p.name}</strong> → {outcomeLabel(outcomes, result.assignments[p.id])}
             </li>
           ))}
         </ul>
