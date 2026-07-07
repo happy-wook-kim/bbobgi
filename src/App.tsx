@@ -13,7 +13,6 @@ export default function App() {
   const [kind, setKind] = useState<AnimationKind | null>(null);
   const [items, setItems] = useState<string[]>([]);
   const [winnerIndex, setWinnerIndex] = useState(-1);
-  const [nonce, setNonce] = useState(0);
 
   const handleChoose = (chosen: AnimationKind) => {
     setKind(chosen);
@@ -34,12 +33,6 @@ export default function App() {
     setStep('choose');
   };
 
-  // 임시(테스트용): 같은 참가자로 당첨자를 새로 뽑고 룰렛을 이어서 다시 돌린다.
-  const replay = () => {
-    setWinnerIndex(pickWinner(items.length));
-    setNonce((k) => k + 1);
-  };
-
   return (
     <div className="app">
       {step === 'choose' && <ChooseAnimation onChoose={handleChoose} />}
@@ -48,19 +41,11 @@ export default function App() {
       )}
       {step === 'animate' && kind && (
         <>
-          {/* 카드는 당첨 카드가 곧 결과라 결과 화면 없이 바로 처음으로 */}
+          {/* 카드·룰렛은 멈추는 순간 당첨 연출을 띄우고 바로 처음으로 */}
           {kind === 'card' && (
             <CardDraw items={items} winnerIndex={winnerIndex} onComplete={toChoose} />
           )}
-          {kind === 'roulette' && (
-            <Roulette
-              items={items}
-              winnerIndex={winnerIndex}
-              nonce={nonce}
-              onComplete={() => setStep('result')}
-              onReplay={replay}
-            />
-          )}
+          {kind === 'roulette' && <Roulette items={items} onComplete={toChoose} />}
           {kind === 'ladder' && (
             <Ladder items={items} winnerIndex={winnerIndex} onComplete={() => setStep('result')} />
           )}
