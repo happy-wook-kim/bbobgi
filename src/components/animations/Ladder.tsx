@@ -176,7 +176,9 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
 
   const loop = (now: number) => {
     const st = stRef.current;
-    const cells = allPaths[st.pIdx].cells;
+    const path = allPaths[st.pIdx];
+    if (!path) return;
+    const cells = path.cells;
     const total = cells.length - 1;
     const tt = ((now - st.start) / 1000) * SPEED;
     if (tt >= total) {
@@ -222,18 +224,20 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
   let mx = 0;
   let my = 0;
   let curD = '';
-  if (started && pIdx < n) {
+  if (started && pIdx < n && allPaths[pIdx]) {
     const cells = allPaths[pIdx].cells;
     const total = cells.length - 1;
-    const idx = Math.min(Math.floor(t), total);
+    const idx = Math.max(0, Math.min(Math.floor(t), total));
     const cur = cells[idx];
-    const nxt = cells[idx + 1];
-    const frac = t - idx;
-    const interp = nxt && !nxt.portalIn;
-    mx = interp ? colX(cur.col) + (colX(nxt.col) - colX(cur.col)) * frac : colX(cur.col);
-    my = interp ? rowY(cur.row) + (rowY(nxt.row) - rowY(cur.row)) * frac : rowY(cur.row);
-    curD = pathD(cells, idx);
-    if (interp && frac > 0) curD += ` L ${mx} ${my}`;
+    if (cur) {
+      const nxt = cells[idx + 1];
+      const frac = t - idx;
+      const interp = nxt && !nxt.portalIn;
+      mx = interp ? colX(cur.col) + (colX(nxt.col) - colX(cur.col)) * frac : colX(cur.col);
+      my = interp ? rowY(cur.row) + (rowY(nxt.row) - rowY(cur.row)) * frac : rowY(cur.row);
+      curD = pathD(cells, idx);
+      if (interp && frac > 0) curD += ` L ${mx} ${my}`;
+    }
   }
 
   const doneCount = started ? pIdx : 0;
