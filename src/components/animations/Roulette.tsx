@@ -92,8 +92,8 @@ export function Roulette({ items, onComplete }: Props) {
         land(fakeTarget);
         return;
       }
-      // 멈추는 순간 끊김 없이 바로 보너스 회전으로 이어짐(양만큼 시간도 늘어남)
-      runPhase(fakeTarget, finalTarget, 1900 + bonusMag * 3.4, () => land(finalTarget));
+      // 멈춘 뒤 천천히 다시 굴러가는 느낌으로(넉넉한 시간 + ease-in-out 재가속)
+      runPhase(fakeTarget, finalTarget, 2800 + bonusMag * 5, () => land(finalTarget));
     });
   };
 
