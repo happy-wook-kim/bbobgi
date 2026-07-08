@@ -127,11 +127,14 @@ export function Roulette({ items, onComplete }: Props) {
           })}
         </div>
       </div>
-      {!done && (
-        <button className="btn-primary" onClick={spin} disabled={spinning}>
-          돌리기
-        </button>
-      )}
+      <button
+        className="btn-primary"
+        onClick={spin}
+        disabled={spinning || done}
+        style={{ visibility: done ? 'hidden' : 'visible' }}
+      >
+        돌리기
+      </button>
       {reveal && (
         <WinnerBurst
           overlay

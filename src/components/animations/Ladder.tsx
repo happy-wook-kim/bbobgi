@@ -289,11 +289,14 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
         </svg>
       </div>
 
-      {!started && (
-        <button className="btn-primary" onClick={start}>
-          시작
-        </button>
-      )}
+      <button
+        className="btn-primary"
+        onClick={start}
+        disabled={started}
+        style={{ visibility: started ? 'hidden' : 'visible' }}
+      >
+        시작
+      </button>
 
       {burst && (
         <WinnerBurst
