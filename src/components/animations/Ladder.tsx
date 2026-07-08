@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
   items: string[];
   winnerIndex: number;
-  onHome: () => void;
-  onReplay: () => void;
+  onWin: (index: number) => void;
 };
 
 type Cell = { col: number; row: number; portalIn?: boolean };
@@ -53,7 +51,7 @@ function tracePath(
   return { cells, exit: col };
 }
 
-export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
+export function Ladder({ items, winnerIndex, onWin }: Props) {
   const n = items.length;
   const ROWS = Math.max(n * 3, 12);
 
@@ -119,7 +117,6 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
       const rg = buildRungs(portalCells);
       if (bijective(rg, pr)) return { rungs: rg, pairs: pr };
     }
-    // 전단사 배치를 못 찾으면 포탈 없이(표준 사다리 = 항상 전단사)
     return { rungs: buildRungs(new Set()), pairs: [] as Pair[] };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n, ROWS, items]);
@@ -134,7 +131,6 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
     return m;
   }, [pairs]);
 
-  // 지오메트리
   const W = Math.max(n * 78, 260);
   const H = 180 + ROWS * 30;
   const padX = 42;
@@ -152,7 +148,7 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
 
   const [pIdx, setPIdx] = useState(-1);
   const [t, setT] = useState(0);
-  const [burst, setBurst] = useState(false);
+  const [arrived, setArrived] = useState(false); // 전원 완료
   const [winnerArrived, setWinnerArrived] = useState(false); // 당첨자가 🎯 도달
   const confettiPieces = useMemo(
     () =>
@@ -169,7 +165,7 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
     [],
   );
   const rafRef = useRef(0);
-  const burstRef = useRef(0);
+  const wonRef = useRef(0);
   const stRef = useRef({ pIdx: 0, start: 0 });
   const started = pIdx >= 0;
   const SPEED = 7;
@@ -190,7 +186,8 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
         rafRef.current = requestAnimationFrame(loop);
       } else {
         setT(total);
-        burstRef.current = window.setTimeout(() => setBurst(true), 900);
+        setArrived(true);
+        wonRef.current = window.setTimeout(() => onWin(winnerIndex), 900);
       }
     } else {
       setT(tt);
@@ -209,7 +206,7 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
   useEffect(
     () => () => {
       cancelAnimationFrame(rafRef.current);
-      clearTimeout(burstRef.current);
+      clearTimeout(wonRef.current);
     },
     [],
   );
@@ -246,11 +243,11 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
     <div className="screen ladder">
       <p className="eyebrow">사다리타기</p>
       <h2 className="stage-title">
-        {burst ? '도착!' : started && pIdx < n ? `${items[pIdx]} 차례` : '시작을 누르세요'}
+        {arrived ? '도착!' : started && pIdx < n ? `${items[pIdx]} 차례` : '시작을 누르세요'}
       </h2>
 
       <div className="ladder-scroll">
-        <svg width={W} height={H} className="ladder-svg" role="img">
+        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="ladder-svg" role="img">
           {items.map((_, i) => (
             <line key={`v${i}`} className="ladder-rail" x1={colX(i)} y1={top} x2={colX(i)} y2={bottom} />
           ))}
@@ -314,7 +311,6 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
               fill={PLAYER_COLORS[pIdx % PLAYER_COLORS.length]}
             />
           )}
-          {/* 당첨 🎯 도달 시 폭죽 */}
           {winnerArrived &&
             confettiPieces.map((p, k) => (
               <circle
@@ -340,16 +336,6 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
       >
         시작
       </button>
-
-      {burst && (
-        <WinnerBurst
-          overlay
-          label={items[winnerIndex]}
-          sub="님이 오늘 쏘기로 했어요 ☕"
-          onHome={onHome}
-          onReplay={onReplay}
-        />
-      )}
     </div>
   );
 }

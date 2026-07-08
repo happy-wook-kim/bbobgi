@@ -1,76 +1,92 @@
 import { useState } from 'react';
-import type { AnimationKind, Step } from './types';
+import type { AnimationKind, ChooseOption, Step } from './types';
 import { pickWinner } from './engine/pick';
+import { randomKind } from './engine/randomKind';
 import { ChooseAnimation } from './components/ChooseAnimation';
 import { SetupScreen } from './components/SetupScreen';
-import { CardDraw } from './components/animations/CardDraw';
-import { Roulette } from './components/animations/Roulette';
-import { Ladder } from './components/animations/Ladder';
+import { GameStage } from './components/GameStage';
+import { ScoreMode } from './components/ScoreMode';
+import { WinnerBurst } from './components/WinnerBurst';
+
+type SetupOption = Exclude<ChooseOption, 'score'>; // card | roulette | ladder | random
 
 export default function App() {
   const [step, setStep] = useState<Step>('choose');
-  const [kind, setKind] = useState<AnimationKind | null>(null);
+  const [option, setOption] = useState<SetupOption | null>(null);
+  const [kind, setKind] = useState<AnimationKind | null>(null); // 이번 판 실제 게임(랜덤이면 매판 새로 결정)
   const [items, setItems] = useState<string[]>([]);
   const [winnerIndex, setWinnerIndex] = useState(-1);
+  const [result, setResult] = useState<number | null>(null); // 게임이 알린 걸린 사람
   const [round, setRound] = useState(0); // 한번 더 할 때마다 증가 → 연출 remount
 
-  const handleChoose = (chosen: AnimationKind) => {
-    setKind(chosen);
+  const handleChoose = (chosen: ChooseOption) => {
+    if (chosen === 'score') {
+      setStep('score');
+      return;
+    }
+    setOption(chosen);
     setStep('setup');
   };
 
-  // 카드: assignTokens로 만든 토큰 items. 룰렛·사다리: 입력한 이름 items.
+  // 카드: assignTokens 토큰 items. 룰렛·사다리·랜덤: 입력한 이름 items.
   const handleStart = (nextItems: string[]) => {
     setItems(nextItems);
+    setKind(option === 'random' ? randomKind() : (option as AnimationKind));
     setWinnerIndex(pickWinner(nextItems.length));
+    setResult(null);
     setRound(0);
     setStep('animate');
   };
 
   const toHome = () => {
+    setOption(null);
     setKind(null);
     setItems([]);
     setWinnerIndex(-1);
+    setResult(null);
     setStep('choose');
   };
 
-  // 한번 더: 참가자는 그대로, 당첨자만 새로 뽑고 연출을 초기화(remount)해 새 판 진행
+  // 한번 더: 참가자는 그대로, 당첨자·게임(랜덤이면)만 새로 뽑고 연출을 remount
   const replay = () => {
+    setKind(option === 'random' ? randomKind() : kind);
     setWinnerIndex(pickWinner(items.length));
+    setResult(null);
     setRound((r) => r + 1);
   };
+
+  const isCard = kind === 'card';
 
   return (
     <div className="app">
       {step === 'choose' && <ChooseAnimation onChoose={handleChoose} />}
-      {step === 'setup' && kind && (
-        <SetupScreen kind={kind} onStart={handleStart} onBack={toHome} />
+
+      {step === 'setup' && option && (
+        <SetupScreen option={option} onStart={handleStart} onBack={toHome} />
       )}
+
       {step === 'animate' && kind && (
         <>
-          {kind === 'card' && (
-            <CardDraw
-              key={round}
-              items={items}
-              winnerIndex={winnerIndex}
-              onHome={toHome}
-              onReplay={replay}
-            />
-          )}
-          {kind === 'roulette' && (
-            <Roulette key={round} items={items} onHome={toHome} onReplay={replay} />
-          )}
-          {kind === 'ladder' && (
-            <Ladder
-              key={round}
-              items={items}
-              winnerIndex={winnerIndex}
+          <GameStage
+            key={round}
+            kind={kind}
+            items={items}
+            winnerIndex={winnerIndex}
+            onWin={(i) => setResult(i)}
+          />
+          {result !== null && (
+            <WinnerBurst
+              overlay
+              label={isCard ? '🎯' : items[result]}
+              sub={isCard ? '이 카드를 뽑은 분이 쏘기로 했어요' : '오늘은 이분이 쏘기로 했어요'}
               onHome={toHome}
               onReplay={replay}
             />
           )}
         </>
       )}
+
+      {step === 'score' && <ScoreMode onHome={toHome} />}
     </div>
   );
 }

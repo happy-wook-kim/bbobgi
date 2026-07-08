@@ -2,26 +2,29 @@ import { useState } from 'react';
 import type { AnimationKind } from '../types';
 import { assignTokens } from '../engine/tokens';
 
+type SetupOption = AnimationKind | 'random';
+
 type Props = {
-  kind: AnimationKind;
+  option: SetupOption;
   onStart: (items: string[]) => void;
   onBack: () => void;
 };
 
-const KIND_LABEL: Record<AnimationKind, string> = {
+const OPTION_LABEL: Record<SetupOption, string> = {
   card: '카드 뽑기',
   roulette: '룰렛',
   ladder: '사다리타기',
+  random: '랜덤',
 };
 
-export function SetupScreen({ kind, onStart, onBack }: Props) {
+export function SetupScreen({ option, onStart, onBack }: Props) {
   return (
     <div className="screen setup">
       <button className="btn-ghost back" onClick={onBack}>
         ← 게임 바꾸기
       </button>
-      <p className="eyebrow">{KIND_LABEL[kind]}</p>
-      {kind === 'card' ? <CardSetup onStart={onStart} /> : <NameSetup onStart={onStart} />}
+      <p className="eyebrow">{OPTION_LABEL[option]}</p>
+      {option === 'card' ? <CardSetup onStart={onStart} /> : <NameSetup onStart={onStart} />}
     </div>
   );
 }
@@ -66,6 +69,9 @@ function NameSetup({ onStart }: { onStart: (items: string[]) => void }) {
   return (
     <>
       <h1 className="setup-title">누가 참여하나요?</h1>
+      <button className="btn-ghost" onClick={() => setNames((ns) => [...ns, ''])}>
+        + 참가자 추가
+      </button>
       <div className="name-list">
         {names.map((name, i) => (
           <input
@@ -79,9 +85,6 @@ function NameSetup({ onStart }: { onStart: (items: string[]) => void }) {
           />
         ))}
       </div>
-      <button className="btn-ghost" onClick={() => setNames((ns) => [...ns, ''])}>
-        + 참가자 추가
-      </button>
       <button className="btn-primary" disabled={!canStart} onClick={() => onStart(trimmed)}>
         시작
       </button>

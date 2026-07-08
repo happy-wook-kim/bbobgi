@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
   items: string[];
-  onHome: () => void;
-  onReplay: () => void;
+  onWin: (index: number) => void;
 };
 
 // 빨주노초파남보
@@ -24,30 +22,28 @@ function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-export function Roulette({ items, onHome, onReplay }: Props) {
+export function Roulette({ items, onWin }: Props) {
   const n = items.length;
   const sliceAngle = 360 / n;
   const background = useMemo(() => conicBackground(n), [n]);
 
   const [rotation, setRotation] = useState(0);
-  const [current, setCurrent] = useState(0); // 지금 포인터가 가리키는 조각
+  const [current, setCurrent] = useState(0);
   const [spinning, setSpinning] = useState(false);
-  const [landed, setLanded] = useState(-1); // 최종적으로 멈춘 자리의 조각 = 당첨
-  const [reveal, setReveal] = useState(false); // 잠깐 뒤 당첨 연출 표시
+  const [landed, setLanded] = useState(-1);
   const rafRef = useRef(0);
-  const revealRef = useRef(0);
+  const wonRef = useRef(0);
 
-  // 상단 포인터(12시)가 가리키는 조각. 조각 중앙이 12시 기준이므로 round.
   const pointerIndex = (rot: number) => ((Math.round(-rot / sliceAngle) % n) + n) % n;
 
   const land = (rot: number) => {
-    setLanded(pointerIndex(rot));
+    const i = pointerIndex(rot);
+    setLanded(i);
     setSpinning(false);
-    // 멈춘 자리를 눈으로 확인할 여유를 두고 당첨 연출을 띄운다.
-    revealRef.current = window.setTimeout(() => setReveal(true), 900);
+    // 멈춘 자리를 눈으로 확인할 여유를 두고 결과를 알린다.
+    wonRef.current = window.setTimeout(() => onWin(i), 900);
   };
 
-  // fromR → toR 로 dur동안 ease-in-out 회전. 끝나면 onEnd.
   const runPhase = (fromR: number, toR: number, dur: number, onEnd: () => void) => {
     const start = performance.now();
     const step = (now: number) => {
@@ -70,24 +66,21 @@ export function Roulette({ items, onHome, onReplay }: Props) {
     if (spinning || landed >= 0) return;
     setSpinning(true);
 
-    // 정방향으로 여러 바퀴 + 랜덤 각도만큼 돌다가 그 자리에 멈춘다. (중앙 정렬 강제 없음)
     const from = rotation;
     const turns = 5 + Math.floor(Math.random() * 5);
     const fakeTarget = (Math.floor(from / 360) + turns) * 360 + Math.random() * 360;
 
-    // 보너스: 멈춘 듯하다 확률적으로(70%) 살짝 더/뒤로 굴러 최종 자리에 안착. 크기 랜덤.
     // 보너스 0~2회. 각 회마다 정/역 방향·크기 랜덤.
     const bonusCount = Math.floor(Math.random() * 3);
     const stops: number[] = [];
     let pos = fakeTarget;
     for (let k = 0; k < bonusCount; k++) {
       const forward = Math.random() < 0.5;
-      const mag = sliceAngle * (0.8 + Math.pow(Math.random(), 2) * 6); // 최소 0.8칸 ~ 여러 칸
+      const mag = sliceAngle * (0.8 + Math.pow(Math.random(), 2) * 6);
       pos = forward ? pos + mag : pos - mag;
       stops.push(pos);
     }
 
-    // 멈춘 뒤 천천히 다시 굴러가는 느낌으로(넉넉한 시간 + ease-in-out 재가속)
     const runBonus = (idx: number, prev: number) => {
       if (idx >= stops.length) {
         land(prev);
@@ -105,7 +98,7 @@ export function Roulette({ items, onHome, onReplay }: Props) {
   useEffect(
     () => () => {
       cancelAnimationFrame(rafRef.current);
-      clearTimeout(revealRef.current);
+      clearTimeout(wonRef.current);
     },
     [],
   );
@@ -122,8 +115,7 @@ export function Roulette({ items, onHome, onReplay }: Props) {
         <div className="wheel-pointer" aria-hidden>▾</div>
         <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
           {items.map((label, i) => {
-            const angle = i * sliceAngle; // 조각 중앙 각도(12시 기준)
-            // 라벨을 원판 표면에 고정 → 원판과 하나로 함께 회전한다.
+            const angle = i * sliceAngle;
             return (
               <span key={i} className="wheel-label" style={{ transform: `rotate(${angle}deg)` }}>
                 <span className={`wheel-label-text ${done && i === landed ? 'is-winner' : ''}`}>
@@ -142,15 +134,6 @@ export function Roulette({ items, onHome, onReplay }: Props) {
       >
         돌리기
       </button>
-      {reveal && (
-        <WinnerBurst
-          overlay
-          label={items[landed]}
-          sub="님이 오늘 쏘기로 했어요 ☕"
-          onHome={onHome}
-          onReplay={onReplay}
-        />
-      )}
     </div>
   );
 }

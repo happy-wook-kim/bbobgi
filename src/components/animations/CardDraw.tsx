@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
   items: string[];
   winnerIndex: number;
-  onHome: () => void;
-  onReplay: () => void;
+  onWin: (index: number) => void;
 };
 
 const CONFETTI = ['#4338ff', '#ff5a5f', '#ffb020', '#20c997', '#f74fd4', '#17171a'];
@@ -48,11 +46,10 @@ function CardConfetti() {
   );
 }
 
-export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
+export function CardDraw({ items, winnerIndex, onWin }: Props) {
   const [flipped, setFlipped] = useState<number[]>([]);
   const [settled, setSettled] = useState<number[]>([]); // 뒤집기 완료 → 3D 해제
-  const [reveal, setReveal] = useState(false);
-  const revealRef = useRef(0);
+  const wonRef = useRef(0);
   const found = flipped.includes(winnerIndex);
   const nextOrder = flipped.length + 1;
 
@@ -61,10 +58,15 @@ export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
     setFlipped((f) => [...f, i]);
   };
 
+  // 당첨 카드가 나오면 잠깐 뒤 결과를 알린다.
+  // onWin에는 위치가 아니라 '당첨 카드를 몇 번째로 뒤집었는지(0-based)'를 넘긴다.
+  // 점수 모드에서 참가자가 1·2·3번 순서대로 뽑으므로, 이 순번의 참가자가 걸린 사람이 된다.
   useEffect(() => {
     if (!found) return;
-    revealRef.current = window.setTimeout(() => setReveal(true), 900);
-    return () => clearTimeout(revealRef.current);
+    const order = flipped.indexOf(winnerIndex);
+    wonRef.current = window.setTimeout(() => onWin(order), 900);
+    return () => clearTimeout(wonRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [found]);
 
   return (
@@ -74,7 +76,7 @@ export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
         {found ? '당첨 카드가 나왔어요' : `${nextOrder}번째, 카드를 뽑으세요`}
       </h2>
       <div className="card-grid">
-        {items.map((token, i) => {
+        {items.map((_, i) => {
           const isFlipped = flipped.includes(i);
           const isSettled = settled.includes(i);
           const isWinner = i === winnerIndex;
@@ -93,22 +95,22 @@ export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
             >
               <span className="flip-inner">
                 <span className="flip-face flip-back" aria-hidden>?</span>
-                <span className="flip-face flip-front">{isWinner ? '🎯' : token}</span>
+                <span className="flip-face flip-front">
+                  {isWinner ? (
+                    <span style={{ color: 'initial' }}>🎯</span>
+                  ) : (
+                    <svg className="mark-x" viewBox="0 0 100 100" aria-hidden>
+                      <line x1="26" y1="26" x2="74" y2="74" />
+                      <line x1="74" y1="26" x2="26" y2="74" />
+                    </svg>
+                  )}
+                </span>
               </span>
               {isSettled && isWinner && <CardConfetti />}
             </button>
           );
         })}
       </div>
-      {reveal && (
-        <WinnerBurst
-          overlay
-          label="🎯"
-          sub="이 카드를 뽑은 분이 쏘기로 했어요 ☕"
-          onHome={onHome}
-          onReplay={onReplay}
-        />
-      )}
     </div>
   );
 }
