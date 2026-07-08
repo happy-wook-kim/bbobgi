@@ -291,7 +291,13 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
             </text>
           ))}
           {items.map((_, i) => (
-            <text key={`ex${i}`} className="ladder-exit" x={colX(i)} y={bottom + 28} textAnchor="middle">
+            <text
+              key={`ex${i}`}
+              className={`ladder-exit ${i === winnerExit ? 'is-target' : ''}`}
+              x={colX(i)}
+              y={bottom + 30}
+              textAnchor="middle"
+            >
               {i === winnerExit ? '🎯' : '·'}
             </text>
           ))}
@@ -311,7 +317,7 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
                 key={`cf${k}`}
                 className="ladder-confetti-piece"
                 cx={colX(winnerExit)}
-                cy={bottom + 24}
+                cy={bottom + 20}
                 r={5}
                 fill={p.color}
                 style={
