@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
@@ -7,6 +8,45 @@ type Props = {
   onHome: () => void;
   onReplay: () => void;
 };
+
+const CONFETTI = ['#4338ff', '#ff5a5f', '#ffb020', '#20c997', '#f74fd4', '#17171a'];
+
+/** 당첨 카드 중심에서 사방으로 터지는 작은 폭죽 */
+function CardConfetti() {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, i) => {
+        const a = Math.random() * Math.PI * 2;
+        const d = 45 + Math.random() * 80;
+        return {
+          dx: Math.cos(a) * d,
+          dy: Math.sin(a) * d,
+          rot: Math.random() * 540 - 270,
+          delay: Math.random() * 0.08,
+          color: CONFETTI[i % CONFETTI.length],
+        };
+      }),
+    [],
+  );
+  return (
+    <span className="card-confetti" aria-hidden>
+      {pieces.map((p, i) => (
+        <i
+          key={i}
+          style={
+            {
+              background: p.color,
+              animationDelay: `${p.delay}s`,
+              '--dx': `${p.dx}px`,
+              '--dy': `${p.dy}px`,
+              '--rot': `${p.rot}deg`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </span>
+  );
+}
 
 export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
   const [flipped, setFlipped] = useState<number[]>([]);
@@ -55,6 +95,7 @@ export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
                 <span className="flip-face flip-back" aria-hidden>?</span>
                 <span className="flip-face flip-front">{isWinner ? '🎯' : token}</span>
               </span>
+              {isSettled && isWinner && <CardConfetti />}
             </button>
           );
         })}

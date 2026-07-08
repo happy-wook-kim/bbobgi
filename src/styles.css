@@ -176,6 +176,15 @@ body {
   border-color: var(--accent);
   animation: winner-glow 0.5s ease-in-out infinite alternate;
 }
+.card-confetti { position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 2; }
+.card-confetti i {
+  position: absolute; top: 50%; left: 50%; width: 8px; height: 11px; border-radius: 2px;
+  opacity: 0; animation: burst 0.7s ease-out forwards;
+}
+.ladder-confetti-piece {
+  opacity: 0; transform-box: fill-box; transform-origin: center;
+  animation: burst 0.8s ease-out forwards;
+}
 @keyframes winner-glow {
   from { box-shadow: 0 0 0 2px rgba(67, 56, 255, 0.25); }
   to { box-shadow: 0 0 0 6px rgba(67, 56, 255, 0.45); }
@@ -271,7 +280,7 @@ body {
 }
 @keyframes burst {
   0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot, 0deg)); opacity: 0; }
 }
 @keyframes bang {
   0% { transform: scale(0); }

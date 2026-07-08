@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
@@ -152,6 +153,21 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
   const [pIdx, setPIdx] = useState(-1);
   const [t, setT] = useState(0);
   const [burst, setBurst] = useState(false);
+  const [winnerArrived, setWinnerArrived] = useState(false); // 당첨자가 🎯 도달
+  const confettiPieces = useMemo(
+    () =>
+      Array.from({ length: 16 }, (_, i) => {
+        const a = Math.random() * Math.PI * 2;
+        const d = 42 + Math.random() * 72;
+        return {
+          dx: Math.cos(a) * d,
+          dy: Math.sin(a) * d,
+          delay: Math.random() * 0.08,
+          color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+        };
+      }),
+    [],
+  );
   const rafRef = useRef(0);
   const burstRef = useRef(0);
   const stRef = useRef({ pIdx: 0, start: 0 });
@@ -164,6 +180,7 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
     const total = cells.length - 1;
     const tt = ((now - st.start) / 1000) * SPEED;
     if (tt >= total) {
+      if (st.pIdx === winnerIndex) setWinnerArrived(true);
       if (st.pIdx + 1 < n) {
         stRef.current = { pIdx: st.pIdx + 1, start: now };
         setPIdx(st.pIdx + 1);
@@ -287,6 +304,21 @@ export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
               fill={PLAYER_COLORS[pIdx % PLAYER_COLORS.length]}
             />
           )}
+          {/* 당첨 🎯 도달 시 폭죽 */}
+          {winnerArrived &&
+            confettiPieces.map((p, k) => (
+              <circle
+                key={`cf${k}`}
+                className="ladder-confetti-piece"
+                cx={colX(winnerExit)}
+                cy={bottom + 24}
+                r={5}
+                fill={p.color}
+                style={
+                  { '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, animationDelay: `${p.delay}s` } as CSSProperties
+                }
+              />
+            ))}
         </svg>
       </div>
 
