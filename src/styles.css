@@ -169,7 +169,7 @@ body {
 .flip-back { background: var(--ink); color: #fff; }
 .flip-front { background: var(--surface); border: 1px solid var(--line); transform: rotateY(180deg); }
 /* 뒤집기가 끝나면 3D를 풀어(flat) 앞면 이모지를 선명하게 */
-.flip-card.is-settled .flip-inner { transform: none; transform-style: flat; }
+.flip-card.is-settled .flip-inner { transition: none; transform: none; transform-style: flat; }
 .flip-card.is-settled .flip-back { display: none; }
 .flip-card.is-settled .flip-front { transform: none; }
 .flip-card.is-winner .flip-face {
