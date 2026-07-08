@@ -23,7 +23,7 @@ export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
 
   useEffect(() => {
     if (!found) return;
-    revealRef.current = window.setTimeout(() => setReveal(true), 900);
+    revealRef.current = window.setTimeout(() => setReveal(true), 1800);
     return () => clearTimeout(revealRef.current);
   }, [found]);
 
