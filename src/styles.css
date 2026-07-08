@@ -147,7 +147,7 @@ body {
 }
 .card-grid {
   display: flex; flex-wrap: wrap; gap: 14px;
-  justify-content: center; width: 100%; perspective: 1400px;
+  justify-content: center; width: 100%; perspective: 2600px;
 }
 .flip-card {
   flex: 0 0 auto;
