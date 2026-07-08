@@ -131,7 +131,7 @@ export function Roulette({ items, onComplete }: Props) {
         className="btn-primary"
         onClick={spin}
         disabled={spinning || done}
-        style={{ visibility: done ? 'hidden' : 'visible' }}
+        style={{ visibility: spinning || done ? 'hidden' : 'visible' }}
       >
         돌리기
       </button>
