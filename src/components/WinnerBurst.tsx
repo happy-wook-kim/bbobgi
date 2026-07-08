@@ -60,7 +60,7 @@ export function WinnerBurst({ label, sub, onHome, onReplay, overlay }: Props) {
         {label && <div className="result-winner">{label}</div>}
         {sub && <p className="result-sub">{sub}</p>}
         <div className="btn-row">
-          <button className="btn-primary" onClick={onHome}>
+          <button className="btn-secondary" onClick={onHome}>
             처음으로
           </button>
           {onReplay && (

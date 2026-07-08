@@ -54,17 +54,32 @@ body {
 .btn-primary {
   padding: 14px 30px;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--ink);
   color: #fff;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.1s ease, opacity 0.2s ease;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.22);
+  transition: transform 0.06s ease, box-shadow 0.06s ease, opacity 0.2s ease;
 }
-.btn-primary:hover { opacity: 0.9; }
-.btn-primary:active { transform: translateY(1px); }
-.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-primary:hover { opacity: 0.92; }
+.btn-primary:active { transform: translateY(4px); box-shadow: 0 0 0 rgba(0, 0, 0, 0.22); }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12); }
+.btn-secondary {
+  padding: 14px 30px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+  transition: transform 0.06s ease, box-shadow 0.06s ease, opacity 0.2s ease;
+}
+.btn-secondary:hover { opacity: 0.85; }
+.btn-secondary:active { transform: translateY(4px); box-shadow: 0 0 0 rgba(0, 0, 0, 0.12); }
 .btn-ghost {
   background: none;
   border: none;
