@@ -10,6 +10,7 @@ type Props = {
 
 export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
   const [flipped, setFlipped] = useState<number[]>([]);
+  const [settled, setSettled] = useState<number[]>([]); // 뒤집기 완료 → 3D 해제
   const [reveal, setReveal] = useState(false);
   const revealRef = useRef(0);
   const found = flipped.includes(winnerIndex);
@@ -20,7 +21,6 @@ export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
     setFlipped((f) => [...f, i]);
   };
 
-  // 당첨 카드가 나오면 잠깐 확인할 여유를 두고 당첨 연출을 띄운다.
   useEffect(() => {
     if (!found) return;
     revealRef.current = window.setTimeout(() => setReveal(true), 900);
@@ -36,18 +36,25 @@ export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
       <div className="card-grid">
         {items.map((token, i) => {
           const isFlipped = flipped.includes(i);
+          const isSettled = settled.includes(i);
           const isWinner = i === winnerIndex;
           return (
             <button
               key={i}
               className={`flip-card ${isFlipped ? 'is-flipped' : ''} ${
-                isFlipped && isWinner ? 'is-winner' : ''
-              }`}
+                isSettled ? 'is-settled' : ''
+              } ${isSettled && isWinner ? 'is-winner' : ''}`}
               onClick={() => flip(i)}
               disabled={isFlipped || found}
               aria-label={isFlipped ? undefined : '카드 뒤집기'}
+              onTransitionEnd={() => {
+                if (isFlipped && !settled.includes(i)) setSettled((s) => [...s, i]);
+              }}
             >
-              <span className="flip-face">{isFlipped ? (isWinner ? '🎯' : token) : '?'}</span>
+              <span className="flip-inner">
+                <span className="flip-face flip-back" aria-hidden>?</span>
+                <span className="flip-face flip-front">{isWinner ? '🎯' : token}</span>
+              </span>
             </button>
           );
         })}

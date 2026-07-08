@@ -11,7 +11,7 @@ const OPTIONS: { kind: AnimationKind; icon: string; title: string; desc: string 
   { kind: "ladder", icon: "🪜", title: "사다리타기", desc: "줄 따라 내려가서" },
 ];
 
-const WORDS = ["커피값", "밥값", "점심값", "술값", "저녁값", "치킨값"];
+const WORDS = ["커피값", "밥값", "점심값", "치킨값", "저녁값", "술값"];
 
 /** 한 글자씩 치고 → 잠깐 멈췄다 → 한 글자씩 지우고 → 다음 단어로 순환. */
 function useTypewriter(words: string[]) {
