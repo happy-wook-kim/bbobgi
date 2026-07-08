@@ -75,24 +75,30 @@ export function Roulette({ items, onComplete }: Props) {
     const fakeTarget = (Math.floor(from / 360) + turns) * 360 + Math.random() * 360;
 
     // 보너스: 멈춘 듯하다 확률적으로(70%) 살짝 더/뒤로 굴러 최종 자리에 안착. 크기 랜덤.
-    const hasBonus = Math.random() < 0.7;
-    let finalTarget = fakeTarget;
-    if (hasBonus) {
+    // 보너스 0~2회. 각 회마다 정/역 방향·크기 랜덤.
+    const bonusCount = Math.floor(Math.random() * 3);
+    const stops: number[] = [];
+    let pos = fakeTarget;
+    for (let k = 0; k < bonusCount; k++) {
       const forward = Math.random() < 0.5;
       const mag = sliceAngle * (0.8 + Math.pow(Math.random(), 2) * 6); // 최소 0.8칸 ~ 여러 칸
-      finalTarget = forward ? fakeTarget + mag : fakeTarget - mag;
+      pos = forward ? pos + mag : pos - mag;
+      stops.push(pos);
     }
-    const bonusMag = Math.abs(finalTarget - fakeTarget);
 
-    const dur1 = 3800 + Math.random() * 1600;
-    runPhase(from, fakeTarget, dur1, () => {
-      if (bonusMag < 1) {
-        land(fakeTarget);
+    // 멈춘 뒤 천천히 다시 굴러가는 느낌으로(넉넉한 시간 + ease-in-out 재가속)
+    const runBonus = (idx: number, prev: number) => {
+      if (idx >= stops.length) {
+        land(prev);
         return;
       }
-      // 멈춘 뒤 천천히 다시 굴러가는 느낌으로(넉넉한 시간 + ease-in-out 재가속)
-      runPhase(fakeTarget, finalTarget, 2800 + bonusMag * 5, () => land(finalTarget));
-    });
+      const target = stops[idx];
+      const mag = Math.abs(target - prev);
+      runPhase(prev, target, 2800 + mag * 5, () => runBonus(idx + 1, target));
+    };
+
+    const dur1 = 3800 + Math.random() * 1600;
+    runPhase(from, fakeTarget, dur1, () => runBonus(0, fakeTarget));
   };
 
   useEffect(
