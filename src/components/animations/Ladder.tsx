@@ -4,7 +4,8 @@ import { WinnerBurst } from '../WinnerBurst';
 type Props = {
   items: string[];
   winnerIndex: number;
-  onComplete: () => void;
+  onHome: () => void;
+  onReplay: () => void;
 };
 
 type Cell = { col: number; row: number; portalIn?: boolean };
@@ -51,7 +52,7 @@ function tracePath(
   return { cells, exit: col };
 }
 
-export function Ladder({ items, winnerIndex, onComplete }: Props) {
+export function Ladder({ items, winnerIndex, onHome, onReplay }: Props) {
   const n = items.length;
   const ROWS = Math.max(n * 3, 12);
 
@@ -303,7 +304,8 @@ export function Ladder({ items, winnerIndex, onComplete }: Props) {
           overlay
           label={items[winnerIndex]}
           sub="님이 오늘 쏘기로 했어요 ☕"
-          onRestart={onComplete}
+          onHome={onHome}
+          onReplay={onReplay}
         />
       )}
     </div>

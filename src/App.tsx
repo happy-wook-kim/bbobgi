@@ -12,6 +12,7 @@ export default function App() {
   const [kind, setKind] = useState<AnimationKind | null>(null);
   const [items, setItems] = useState<string[]>([]);
   const [winnerIndex, setWinnerIndex] = useState(-1);
+  const [round, setRound] = useState(0); // 한번 더 할 때마다 증가 → 연출 remount
 
   const handleChoose = (chosen: AnimationKind) => {
     setKind(chosen);
@@ -22,31 +23,51 @@ export default function App() {
   const handleStart = (nextItems: string[]) => {
     setItems(nextItems);
     setWinnerIndex(pickWinner(nextItems.length));
+    setRound(0);
     setStep('animate');
   };
 
-  const toChoose = () => {
+  const toHome = () => {
     setKind(null);
     setItems([]);
     setWinnerIndex(-1);
     setStep('choose');
   };
 
-  // 세 연출 모두 멈추면 잠깐 뒤 당첨 연출을 자체적으로 띄우고, 끝나면 처음으로 돌아온다.
+  // 한번 더: 참가자는 그대로, 당첨자만 새로 뽑고 연출을 초기화(remount)해 새 판 진행
+  const replay = () => {
+    setWinnerIndex(pickWinner(items.length));
+    setRound((r) => r + 1);
+  };
+
   return (
     <div className="app">
       {step === 'choose' && <ChooseAnimation onChoose={handleChoose} />}
       {step === 'setup' && kind && (
-        <SetupScreen kind={kind} onStart={handleStart} onBack={toChoose} />
+        <SetupScreen kind={kind} onStart={handleStart} onBack={toHome} />
       )}
       {step === 'animate' && kind && (
         <>
           {kind === 'card' && (
-            <CardDraw items={items} winnerIndex={winnerIndex} onComplete={toChoose} />
+            <CardDraw
+              key={round}
+              items={items}
+              winnerIndex={winnerIndex}
+              onHome={toHome}
+              onReplay={replay}
+            />
           )}
-          {kind === 'roulette' && <Roulette items={items} onComplete={toChoose} />}
+          {kind === 'roulette' && (
+            <Roulette key={round} items={items} onHome={toHome} onReplay={replay} />
+          )}
           {kind === 'ladder' && (
-            <Ladder items={items} winnerIndex={winnerIndex} onComplete={toChoose} />
+            <Ladder
+              key={round}
+              items={items}
+              winnerIndex={winnerIndex}
+              onHome={toHome}
+              onReplay={replay}
+            />
           )}
         </>
       )}

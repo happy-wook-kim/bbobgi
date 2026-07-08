@@ -4,10 +4,11 @@ import { WinnerBurst } from '../WinnerBurst';
 type Props = {
   items: string[];
   winnerIndex: number;
-  onComplete: () => void;
+  onHome: () => void;
+  onReplay: () => void;
 };
 
-export function CardDraw({ items, winnerIndex, onComplete }: Props) {
+export function CardDraw({ items, winnerIndex, onHome, onReplay }: Props) {
   const [flipped, setFlipped] = useState<number[]>([]);
   const [reveal, setReveal] = useState(false);
   const revealRef = useRef(0);
@@ -56,7 +57,8 @@ export function CardDraw({ items, winnerIndex, onComplete }: Props) {
           overlay
           label="🎯"
           sub="이 카드를 뽑은 분이 쏘기로 했어요 ☕"
-          onRestart={onComplete}
+          onHome={onHome}
+          onReplay={onReplay}
         />
       )}
     </div>

@@ -3,7 +3,8 @@ import { WinnerBurst } from '../WinnerBurst';
 
 type Props = {
   items: string[];
-  onComplete: () => void;
+  onHome: () => void;
+  onReplay: () => void;
 };
 
 // 빨주노초파남보
@@ -23,7 +24,7 @@ function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-export function Roulette({ items, onComplete }: Props) {
+export function Roulette({ items, onHome, onReplay }: Props) {
   const n = items.length;
   const sliceAngle = 360 / n;
   const background = useMemo(() => conicBackground(n), [n]);
@@ -146,7 +147,8 @@ export function Roulette({ items, onComplete }: Props) {
           overlay
           label={items[landed]}
           sub="님이 오늘 쏘기로 했어요 ☕"
-          onRestart={onComplete}
+          onHome={onHome}
+          onReplay={onReplay}
         />
       )}
     </div>

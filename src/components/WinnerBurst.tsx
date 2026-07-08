@@ -46,11 +46,12 @@ function Confetti() {
 type Props = {
   label?: string;
   sub?: string;
-  onRestart: () => void;
+  onHome: () => void;
+  onReplay?: () => void;
   overlay?: boolean;
 };
 
-export function WinnerBurst({ label, sub, onRestart, overlay }: Props) {
+export function WinnerBurst({ label, sub, onHome, onReplay, overlay }: Props) {
   return (
     <div className={overlay ? 'winner-overlay' : 'screen result'}>
       <Confetti />
@@ -58,9 +59,16 @@ export function WinnerBurst({ label, sub, onRestart, overlay }: Props) {
         <div className="winner-bang">당첨!</div>
         {label && <div className="result-winner">{label}</div>}
         {sub && <p className="result-sub">{sub}</p>}
-        <button className="btn-primary" onClick={onRestart}>
-          다시하기
-        </button>
+        <div className="btn-row">
+          {onReplay && (
+            <button className="btn-primary" onClick={onReplay}>
+              한번 더
+            </button>
+          )}
+          <button className="btn-ghost" onClick={onHome}>
+            홈으로
+          </button>
+        </div>
       </div>
     </div>
   );
