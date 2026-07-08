@@ -15,9 +15,9 @@ const CONFETTI = ['#4338ff', '#ff5a5f', '#ffb020', '#20c997', '#f74fd4', '#17171
 function CardConfetti() {
   const pieces = useMemo(
     () =>
-      Array.from({ length: 18 }, (_, i) => {
+      Array.from({ length: 28 }, (_, i) => {
         const a = Math.random() * Math.PI * 2;
-        const d = 45 + Math.random() * 80;
+        const d = 75 + Math.random() * 150;
         return {
           dx: Math.cos(a) * d,
           dy: Math.sin(a) * d,
