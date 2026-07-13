@@ -352,24 +352,36 @@ body {
 .race-finish { left: calc(100% - 46px); border-right: 3px solid var(--ink); } /* 결승선 */
 .race-lane {
   position: relative;
-  height: 52px;
+  height: 64px;
   border-radius: 12px;
   border-bottom: 2px dashed var(--line);
 }
 .race-lane.is-loser { background: #fdecea; }
 .race-item {
   position: absolute;
-  bottom: 2px;
+  bottom: 16px;
   font-size: 16px;
   line-height: 1;
 }
 .race-horse {
   position: absolute;
-  bottom: 0;
+  bottom: 14px;
   width: 34px;
   font-size: 26px;
   line-height: 34px;
 }
+.race-speed {
+  position: absolute;
+  left: 6px;
+  bottom: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.race-speed.is-fast { color: #fb8c00; }
+.race-speed.is-slow { color: #e53935; }
 .race-glyph {
   display: inline-block;
   font-style: normal;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { buildRaceProfiles, progressAt } from '../../engine/race';
+import { buildRaceProfiles, progressAt, speedAt } from '../../engine/race';
 
 type Props = {
   items: string[];
@@ -17,6 +17,7 @@ const PAD_L = 12; // 출발 벽 위치
 const PAD_R = 46; // 결승선 + 순위 뱃지 공간
 const HORSE_W = 34;
 const RUN_SPAN = `(100% - ${PAD_L + PAD_R + HORSE_W}px)`; // 달리는 구간 폭
+const KMH = 360000; // 진행도/ms → km/h 환산(코스 100m 기준) — 평균 속도가 약 45km/h가 된다
 
 export function HorseRace({ items, winnerIndex, onWin }: Props) {
   const n = items.length;
@@ -120,6 +121,15 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
               <b className={`race-rank ${done && isLoser ? 'is-loser' : ''}`}>
                 {finished ? (done && isLoser ? '꼴찌' : `${rankOf[i] + 1}등`) : ''}
               </b>
+              {started && !finished && (
+                <i
+                  className={`race-speed ${
+                    active ? (active.kind === 'rock' ? 'is-slow' : 'is-fast') : ''
+                  }`}
+                >
+                  {Math.round(speedAt(profiles[i], t) * KMH)} km/h
+                </i>
+              )}
             </div>
           );
         })}

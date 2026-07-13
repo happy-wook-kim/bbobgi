@@ -113,6 +113,18 @@ export function buildRaceProfiles(
   });
 }
 
+/** 시각 t(ms)의 순간 속도(진행도/ms). 달리는 중엔 구간 기울기, 도착 후엔 0. */
+export function speedAt(profile: RaceProfile, t: number): number {
+  const pts = profile.waypoints;
+  if (t < 0 || t >= profile.finishTime) return 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    if (t <= b.t) return (b.x - a.x) / (b.t - a.t);
+  }
+  return 0;
+}
+
 /** 시각 t(ms)의 진행도(0~1). 제어점 사이 선형 보간, 단조 증가. */
 export function progressAt(profile: RaceProfile, t: number): number {
   const pts = profile.waypoints;

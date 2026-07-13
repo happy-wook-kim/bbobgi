@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildRaceProfiles, progressAt } from './race';
+import { buildRaceProfiles, progressAt, speedAt } from './race';
 
 /** 결정적 테스트용 LCG */
 const lcg = (seed: number) => () => {
@@ -102,6 +102,45 @@ describe('events (돌·부스터)', () => {
     // 표본이 실제로 검증됐는지 보장
     expect(rocks).toBeGreaterThan(10);
     expect(boosts).toBeGreaterThan(10);
+  });
+});
+
+describe('speedAt', () => {
+  it('달리는 동안 양수, 도착 후에는 0이다', () => {
+    const profiles = buildRaceProfiles(4, 1, lcg(5));
+    for (const p of profiles) {
+      for (let t = 0; t < p.finishTime; t += 100) {
+        expect(speedAt(p, t)).toBeGreaterThan(0);
+      }
+      expect(speedAt(p, p.finishTime)).toBe(0);
+      expect(speedAt(p, p.finishTime + 500)).toBe(0);
+    }
+  });
+
+  it('돌 구간에선 평균의 20% 미만, 부스터 구간에선 평균의 1.5배 초과다', () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const p of buildRaceProfiles(4, seed % 4, lcg(seed))) {
+        const avg = 1 / p.finishTime;
+        for (const e of p.events) {
+          const mid = speedAt(p, e.t + e.duration / 2);
+          if (e.kind === 'rock') expect(mid).toBeLessThan(avg * 0.2);
+          else expect(mid).toBeGreaterThan(avg * 1.5);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  it('구간 기울기와 일치한다 (progressAt 미분)', () => {
+    const [p] = buildRaceProfiles(3, 0, lcg(9));
+    const dt = 1;
+    for (let t = 200; t < p.finishTime - 200; t += 500) {
+      const numeric = (progressAt(p, t + dt) - progressAt(p, t)) / dt;
+      // 제어점 경계가 아닌 곳에선 수치 미분과 일치
+      expect(Math.abs(speedAt(p, t) - numeric)).toBeLessThan(1e-6);
+    }
   });
 });
 
