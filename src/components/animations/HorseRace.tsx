@@ -143,6 +143,15 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
                         : ''
                   }`}
                 >
+                  {active
+                    ? active.kind === 'rock'
+                      ? '돌에 걸림! '
+                      : '부스터! '
+                    : condition === 'sprint'
+                      ? '스퍼트 중 '
+                      : condition === 'tired'
+                        ? '지침… '
+                        : ''}
                   {Math.round(spd * KMH)} km/h
                 </i>
               )}

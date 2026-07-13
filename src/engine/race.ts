@@ -5,8 +5,8 @@ export type RaceEventKind = 'rock' | 'boost';
 export type RaceEvent = { kind: RaceEventKind; t: number; duration: number; x: number };
 export type RaceProfile = { finishTime: number; waypoints: Waypoint[]; events: RaceEvent[] };
 
-const FASTEST = 7000; // 1등 도착 목표(ms)
-const SPREAD = 1600; // 1등 ~ 꼴찌 직전까지 도착 시각이 퍼지는 폭
+const FASTEST = 9500; // 1등 도착 목표(ms) — 기본 속도를 느리게, 레이스 약 12초
+const SPREAD = 2000; // 1등 ~ 꼴찌 직전까지 도착 시각이 퍼지는 폭
 const MARGIN_MIN = 300; // 꼴찌 접전 마진(ms)
 const MARGIN_MAX = 800;
 const EVENT_FROM = 0.15; // 이벤트 발생 시간대(레이스 시간 비율)

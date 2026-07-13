@@ -27,7 +27,7 @@ pnpm dev --port 5199 --strictPort  # dev 서버 (백그라운드로)
 | 카드 | `.card-grid` | `.flip-card`를 순서대로 클릭(뒤집기 전환 ~700ms 대기) | ~n초 |
 | 룰렛 | `.wheel` | `돌리기` 클릭 후 대기 | 최대 ~25s (보너스 스핀) |
 | 사다리 | `.ladder-svg` | `시작` 클릭 후 대기 | ~n×3s |
-| 경마 | `.race-track` | `출발` 클릭 후 대기 | ~9s |
+| 경마 | `.race-track` | `출발` 클릭 후 대기 | ~12s |
 
 - 판 종료 감지: `.winner-overlay`(일반 모드) 또는 `.scoreboard`(점수 모드) 대기.
 - 일반 모드 반복: `한번 더` 버튼. 점수 모드 반복: `다음 판` 버튼.
