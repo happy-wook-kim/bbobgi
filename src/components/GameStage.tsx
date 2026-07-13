@@ -2,6 +2,7 @@ import type { AnimationKind } from '../types';
 import { CardDraw } from './animations/CardDraw';
 import { Roulette } from './animations/Roulette';
 import { Ladder } from './animations/Ladder';
+import { HorseRace } from './animations/HorseRace';
 
 type Props = {
   kind: AnimationKind;
@@ -14,5 +15,6 @@ type Props = {
 export function GameStage({ kind, items, winnerIndex, onWin }: Props) {
   if (kind === 'card') return <CardDraw items={items} winnerIndex={winnerIndex} onWin={onWin} />;
   if (kind === 'roulette') return <Roulette items={items} onWin={onWin} />;
+  if (kind === 'horse') return <HorseRace items={items} winnerIndex={winnerIndex} onWin={onWin} />;
   return <Ladder items={items} winnerIndex={winnerIndex} onWin={onWin} />;
 }

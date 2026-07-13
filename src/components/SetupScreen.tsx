@@ -14,6 +14,7 @@ const OPTION_LABEL: Record<SetupOption, string> = {
   card: '카드 뽑기',
   roulette: '룰렛',
   ladder: '사다리타기',
+  horse: '경마',
   random: '랜덤',
 };
 
