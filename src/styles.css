@@ -388,6 +388,7 @@ body {
 }
 .race-speed.is-fast { color: #fb8c00; }
 .race-speed.is-slow { color: #e53935; }
+.race-speed.is-sprint { color: #1e88e5; }
 .race-glyph {
   display: inline-block;
   font-style: normal;
@@ -396,6 +397,8 @@ body {
 .race-horse.is-running .race-glyph { animation: gallop 0.35s ease-in-out infinite alternate; }
 .race-horse.is-stumbling .race-glyph { animation: stumble 0.3s ease-in-out infinite; }
 .race-horse.is-boosting .race-glyph { animation: gallop 0.18s ease-in-out infinite alternate; }
+.race-horse.is-sprinting .race-glyph { animation: gallop 0.24s ease-in-out infinite alternate; } /* 스퍼트: 잰걸음 */
+.race-horse.is-tired .race-glyph { animation: gallop 0.55s ease-in-out infinite alternate; } /* 지침: 무거운 걸음 */
 @keyframes gallop {
   from { transform: scaleX(-1) translateY(0); }
   to { transform: scaleX(-1) translateY(-4px); }

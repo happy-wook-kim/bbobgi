@@ -82,13 +82,21 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
           const isLoser = i === winnerIndex;
           // 현재 발동 중인 이벤트 (돌에 걸림 / 부스터)
           const active = profiles[i].events.find((e) => t >= e.t && t <= e.t + e.duration);
+          // 컨디션: 자기 평균 대비 15% 이상 빠르면 스퍼트 💨, 15% 이상 느리면 지침 💦
+          const spd = speedAt(profiles[i], t);
+          const avg = 1 / profiles[i].finishTime;
+          const condition = spd >= avg * 1.15 ? 'sprint' : spd <= avg * 0.85 ? 'tired' : 'run';
           const horseState = !started || finished
             ? ''
             : active
               ? active.kind === 'rock'
                 ? 'is-stumbling'
                 : 'is-boosting'
-              : 'is-running';
+              : condition === 'sprint'
+                ? 'is-sprinting'
+                : condition === 'tired'
+                  ? 'is-tired'
+                  : 'is-running';
           return (
             <div key={i} className={`race-lane ${done && isLoser ? 'is-loser' : ''}`}>
               {profiles[i].events.map((e, k) => {
@@ -114,8 +122,10 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
                 <i className="race-tag" style={{ color: HORSE_COLORS[i % HORSE_COLORS.length] }}>
                   {name}
                 </i>
-                {active?.kind === 'rock' && <i className="race-fx">💫</i>}
-                {active?.kind === 'boost' && <i className="race-fx race-fx-boost">🔥</i>}
+                {horseState === 'is-stumbling' && <i className="race-fx">💫</i>}
+                {horseState === 'is-boosting' && <i className="race-fx race-fx-boost">🔥</i>}
+                {horseState === 'is-sprinting' && <i className="race-fx race-fx-boost">💨</i>}
+                {horseState === 'is-tired' && <i className="race-fx">💦</i>}
                 <i className="race-glyph">🐎</i>
               </span>
               <b className={`race-rank ${done && isLoser ? 'is-loser' : ''}`}>
@@ -124,10 +134,16 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
               {started && !finished && (
                 <i
                   className={`race-speed ${
-                    active ? (active.kind === 'rock' ? 'is-slow' : 'is-fast') : ''
+                    active
+                      ? active.kind === 'rock'
+                        ? 'is-slow'
+                        : 'is-fast'
+                      : condition === 'sprint'
+                        ? 'is-sprint'
+                        : ''
                   }`}
                 >
-                  {Math.round(speedAt(profiles[i], t) * KMH)} km/h
+                  {Math.round(spd * KMH)} km/h
                 </i>
               )}
             </div>
