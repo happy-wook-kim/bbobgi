@@ -131,30 +131,26 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
               <b className={`race-rank ${done && isLoser ? 'is-loser' : ''}`}>
                 {finished ? (done && isLoser ? '꼴찌' : `${rankOf[i] + 1}등`) : ''}
               </b>
-              {started && !finished && (
-                <i
-                  className={`race-speed ${
-                    active
-                      ? active.kind === 'rock'
-                        ? 'is-slow'
-                        : 'is-fast'
-                      : condition === 'sprint'
-                        ? 'is-sprint'
-                        : ''
-                  }`}
-                >
-                  {active
-                    ? active.kind === 'rock'
-                      ? '돌에 걸림! '
-                      : '부스터! '
-                    : condition === 'sprint'
-                      ? '스퍼트 중 '
-                      : condition === 'tired'
-                        ? '지침… '
-                        : ''}
-                  {Math.round(spd * KMH)} km/h
-                </i>
-              )}
+              {started && !finished && (() => {
+                // 속도 수치와 상태 문구를 분리 — 문구는 옆의 색 뱃지로
+                const state = active
+                  ? active.kind === 'rock'
+                    ? { cls: 'is-slow', label: '돌에 걸림!' }
+                    : { cls: 'is-fast', label: '부스터!' }
+                  : condition === 'sprint'
+                    ? { cls: 'is-sprint', label: '스퍼트 중' }
+                    : condition === 'tired'
+                      ? { cls: 'is-tired', label: '지침…' }
+                      : null;
+                return (
+                  <span className="race-hud">
+                    <i className={`race-speed ${state?.cls ?? ''}`}>
+                      {Math.round(spd * KMH)} km/h
+                    </i>
+                    {state && <i className={`race-badge ${state.cls}`}>{state.label}</i>}
+                  </span>
+                );
+              })()}
             </div>
           );
         })}
