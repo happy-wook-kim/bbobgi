@@ -128,6 +128,60 @@ describe('역전 리듬', () => {
     }
     expect(changed).toBeGreaterThanOrEqual(SEEDS * 0.8);
   });
+
+  it('선두 교체가 판당 평균 4회 이상 일어난다 (극적인 엎치락뒤치락)', () => {
+    let transitions = 0;
+    const SEEDS = 30;
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const profiles = buildRaceProfiles(4, seed % 4, lcg(seed));
+      const end = Math.max(...profiles.map((p) => p.finishTime));
+      let prevLead = -1;
+      for (let t = end * 0.05; t <= end * 0.95; t += end * 0.025) {
+        let lead = 0;
+        let best = -1;
+        profiles.forEach((p, i) => {
+          const x = progressAt(p, t);
+          if (x > best) {
+            best = x;
+            lead = i;
+          }
+        });
+        if (prevLead >= 0 && lead !== prevLead) transitions++;
+        prevLead = lead;
+      }
+    }
+    expect(transitions / SEEDS).toBeGreaterThanOrEqual(4);
+  });
+
+  it('한 말이 레이스의 40%를 넘겨 독주하지 않는다 (평균)', () => {
+    let ratioSum = 0;
+    const SEEDS = 30;
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const profiles = buildRaceProfiles(4, seed % 4, lcg(seed));
+      const end = Math.max(...profiles.map((p) => p.finishTime));
+      const leaders: number[] = [];
+      for (let t = end * 0.05; t <= end * 0.95; t += end * 0.025) {
+        let lead = 0;
+        let best = -1;
+        profiles.forEach((p, i) => {
+          const x = progressAt(p, t);
+          if (x > best) {
+            best = x;
+            lead = i;
+          }
+        });
+        leaders.push(lead);
+      }
+      let cur = 1;
+      let max = 1;
+      for (let i = 1; i < leaders.length; i++) {
+        cur = leaders[i] === leaders[i - 1] ? cur + 1 : 1;
+        max = Math.max(max, cur);
+      }
+      ratioSum += max / leaders.length;
+    }
+    expect(ratioSum / SEEDS).toBeLessThanOrEqual(0.4);
+  });
 });
 
 describe('speedAt', () => {
@@ -162,8 +216,9 @@ describe('speedAt', () => {
     const [p] = buildRaceProfiles(3, 0, lcg(9));
     const dt = 1;
     for (let t = 200; t < p.finishTime - 200; t += 500) {
+      // 제어점 경계를 걸치는 표본은 건너뛴다 — 기울기는 한 구간 안에서만 일정하다
+      if (p.waypoints.some((w) => w.t > t && w.t < t + dt)) continue;
       const numeric = (progressAt(p, t + dt) - progressAt(p, t)) / dt;
-      // 제어점 경계가 아닌 곳에선 수치 미분과 일치
       expect(Math.abs(speedAt(p, t) - numeric)).toBeLessThan(1e-6);
     }
   });
