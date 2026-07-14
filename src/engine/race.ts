@@ -19,8 +19,12 @@ const ROCK_WEIGHT = 0.02; // 돌 구간 진행량: 거의 정지
 const BOOST_SPEED = 3; // 부스터 구간: 일반 대비 배속
 const RUN_CHUNK_MIN = 700; // 일반 구간 분할 단위(ms) — 짧을수록 속도 변화가 잦다
 const RUN_CHUNK_MAX = 1300;
-const SPEED_JITTER_MIN = 0.55; // 일반 구간 속도 배율 범위
-const SPEED_JITTER_MAX = 1.5;
+// 일반 구간은 느림/빠름 밴드를 번갈아 탄다 — 뒤처진 말이 다음 구간에 다시 치고 나오는 고무줄 리듬
+const SLOW_MIN = 0.55;
+const SLOW_MAX = 0.9;
+const FAST_MIN = 1.15;
+const FAST_MAX = 1.5;
+const EVENT_COUNT = 3; // 레인당 아이템 수
 
 /**
  * 말별 도착 시각·중간 제어점·이벤트(돌/부스터)를 생성한다. loserIndex 말이 항상 마지막에 도착한다.
@@ -43,7 +47,7 @@ export function buildRaceProfiles(
   // 타임라인을 [일반/이벤트] 구간으로 나누고 구간별 진행량을 배분한 뒤 0~1로 정규화한다.
   const buildFor = (finishTime: number): { waypoints: Waypoint[]; events: RaceEvent[] } => {
     // 1) 이벤트 배치: 슬롯 분할로 겹침 없이 15%~80% 시간대에
-    const count = Math.floor(rand() * 3);
+    const count = EVENT_COUNT;
     const evs: { kind: RaceEventKind; t: number; duration: number }[] = [];
     const from = EVENT_FROM * finishTime;
     const span = (EVENT_TO - EVENT_FROM) * finishTime;
@@ -83,13 +87,13 @@ export function buildRaceProfiles(
     }
 
     // 3) 구간별 진행량 → 4) 누적 정규화
+    let fast = rand() < 0.5; // 말마다 시작 밴드가 달라 서로 엇갈리며 역전이 생긴다
     const weights = parts.map((s) => {
       if (s.ev !== undefined && evs[s.ev].kind === 'rock') return ROCK_WEIGHT;
-      const speed =
-        s.ev !== undefined
-          ? BOOST_SPEED
-          : SPEED_JITTER_MIN + rand() * (SPEED_JITTER_MAX - SPEED_JITTER_MIN);
-      return (s.to - s.from) * speed;
+      if (s.ev !== undefined) return (s.to - s.from) * BOOST_SPEED;
+      const [lo, hi] = fast ? [FAST_MIN, FAST_MAX] : [SLOW_MIN, SLOW_MAX];
+      fast = !fast;
+      return (s.to - s.from) * (lo + rand() * (hi - lo));
     });
     const total = weights.reduce((a, b) => a + b, 0);
     const waypoints: Waypoint[] = [{ t: 0, x: 0 }];

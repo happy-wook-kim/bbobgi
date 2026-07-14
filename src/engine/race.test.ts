@@ -51,11 +51,10 @@ describe('buildRaceProfiles', () => {
 });
 
 describe('events (돌·부스터)', () => {
-  it('말당 0~2개, 종류는 rock|boost, x는 0~1 사이다', () => {
+  it('말당 정확히 3개, 종류는 rock|boost, x는 0~1 사이다', () => {
     for (let seed = 1; seed <= 30; seed++) {
       for (const p of buildRaceProfiles(4, seed % 4, lcg(seed))) {
-        expect(p.events.length).toBeGreaterThanOrEqual(0);
-        expect(p.events.length).toBeLessThanOrEqual(2);
+        expect(p.events.length).toBe(3);
         for (const e of p.events) {
           expect(['rock', 'boost']).toContain(e.kind);
           expect(e.x).toBeGreaterThan(0);
@@ -102,6 +101,32 @@ describe('events (돌·부스터)', () => {
     // 표본이 실제로 검증됐는지 보장
     expect(rocks).toBeGreaterThan(10);
     expect(boosts).toBeGreaterThan(10);
+  });
+});
+
+describe('역전 리듬', () => {
+  it('선두가 레이스 중 최소 한 번은 바뀐다 (대부분의 판)', () => {
+    let changed = 0;
+    const SEEDS = 30;
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const profiles = buildRaceProfiles(4, seed % 4, lcg(seed));
+      const end = Math.max(...profiles.map((p) => p.finishTime));
+      const leaders = new Set<number>();
+      for (let t = end * 0.1; t <= end * 0.9; t += end * 0.05) {
+        let lead = 0;
+        let best = -1;
+        profiles.forEach((p, i) => {
+          const x = progressAt(p, t);
+          if (x > best) {
+            best = x;
+            lead = i;
+          }
+        });
+        leaders.add(lead);
+      }
+      if (leaders.size >= 2) changed++;
+    }
+    expect(changed).toBeGreaterThanOrEqual(SEEDS * 0.8);
   });
 });
 
