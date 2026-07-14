@@ -64,16 +64,16 @@ describe('events (돌·부스터)', () => {
     }
   });
 
-  it('이벤트는 레이스 15~80% 시간대에서 겹치지 않게 일어난다', () => {
+  it('아이템은 트랙 1/4·2/4·3/4 지점에 일정한 간격으로 놓이고 시간이 겹치지 않는다', () => {
     for (let seed = 1; seed <= 30; seed++) {
       for (const p of buildRaceProfiles(4, seed % 4, lcg(seed))) {
+        const xs = p.events.map((e) => e.x).sort((a, b) => a - b);
+        expect(xs[0]).toBeCloseTo(0.25, 5);
+        expect(xs[1]).toBeCloseTo(0.5, 5);
+        expect(xs[2]).toBeCloseTo(0.75, 5);
         const sorted = [...p.events].sort((a, b) => a.t - b.t);
-        for (let i = 0; i < sorted.length; i++) {
-          expect(sorted[i].t).toBeGreaterThanOrEqual(0.15 * p.finishTime - 1e-6);
-          expect(sorted[i].t + sorted[i].duration).toBeLessThanOrEqual(0.8 * p.finishTime + 1e-6);
-          if (i > 0) {
-            expect(sorted[i].t).toBeGreaterThanOrEqual(sorted[i - 1].t + sorted[i - 1].duration);
-          }
+        for (let i = 1; i < sorted.length; i++) {
+          expect(sorted[i].t).toBeGreaterThanOrEqual(sorted[i - 1].t + sorted[i - 1].duration);
         }
       }
     }
