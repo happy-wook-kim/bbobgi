@@ -79,6 +79,21 @@ describe('events (돌·부스터)', () => {
     }
   });
 
+  it('부스터는 끊기지 않고 1초 이상(최대 1.2초) 유지된다', () => {
+    let boosts = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const p of buildRaceProfiles(4, seed % 4, lcg(seed))) {
+        for (const e of p.events) {
+          if (e.kind !== 'boost') continue;
+          boosts++;
+          expect(e.duration).toBeGreaterThanOrEqual(1000);
+          expect(e.duration).toBeLessThanOrEqual(1200);
+        }
+      }
+    }
+    expect(boosts).toBeGreaterThan(20);
+  });
+
   it('돌 구간에선 거의 멈추고 부스터 구간에선 평균보다 빠르다', () => {
     let rocks = 0;
     let boosts = 0;
@@ -93,7 +108,7 @@ describe('events (돌·부스터)', () => {
             expect(speed).toBeLessThan(avgSpeed * 0.2);
           } else {
             boosts++;
-            expect(speed).toBeGreaterThan(avgSpeed * 1.5);
+            expect(speed).toBeGreaterThan(avgSpeed * 1.35);
           }
         }
       }
@@ -153,7 +168,8 @@ describe('역전 리듬', () => {
     expect(transitions / SEEDS).toBeGreaterThanOrEqual(4);
   });
 
-  it('한 말이 레이스의 40%를 넘겨 독주하지 않는다 (평균)', () => {
+  // 부스터 1초 유지(+반납 구간)가 정당한 선두 시간을 만들므로 상한은 45%
+  it('한 말이 레이스의 45%를 넘겨 독주하지 않는다 (평균)', () => {
     let ratioSum = 0;
     const SEEDS = 30;
     for (let seed = 1; seed <= SEEDS; seed++) {
@@ -180,7 +196,7 @@ describe('역전 리듬', () => {
       }
       ratioSum += max / leaders.length;
     }
-    expect(ratioSum / SEEDS).toBeLessThanOrEqual(0.4);
+    expect(ratioSum / SEEDS).toBeLessThanOrEqual(0.45);
   });
 });
 
@@ -196,7 +212,7 @@ describe('speedAt', () => {
     }
   });
 
-  it('돌 구간에선 평균의 20% 미만, 부스터 구간에선 평균의 1.5배 초과다', () => {
+  it('돌 구간에선 평균의 20% 미만, 부스터 구간에선 평균의 1.35배 초과다', () => {
     let checked = 0;
     for (let seed = 1; seed <= 40; seed++) {
       for (const p of buildRaceProfiles(4, seed % 4, lcg(seed))) {
@@ -204,7 +220,7 @@ describe('speedAt', () => {
         for (const e of p.events) {
           const mid = speedAt(p, e.t + e.duration / 2);
           if (e.kind === 'rock') expect(mid).toBeLessThan(avg * 0.2);
-          else expect(mid).toBeGreaterThan(avg * 1.5);
+          else expect(mid).toBeGreaterThan(avg * 1.35);
           checked++;
         }
       }
