@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { AnimationKind } from '../types';
 import { pickWinner } from '../engine/pick';
-import { randomKind } from '../engine/randomKind';
+import { shuffleKinds } from '../engine/randomKind';
 import { GameStage } from './GameStage';
 import { WinnerBurst } from './WinnerBurst';
 
@@ -24,8 +24,15 @@ export function ScoreMode({ onHome }: Props) {
   const trimmed = names.map((n) => n.trim()).filter(Boolean);
   const canStart = trimmed.length >= 2;
 
+  // 셔플 백: 네 게임을 한 바퀴 다 돌기 전엔 같은 게임이 반복되지 않는다.
+  const bagRef = useRef<AnimationKind[]>([]);
+  const lastKindRef = useRef<AnimationKind | null>(null);
+
   const rollNextGame = (roster: string[]) => {
-    setKind(randomKind());
+    if (bagRef.current.length === 0) bagRef.current = shuffleKinds(lastKindRef.current);
+    const next = bagRef.current.shift()!;
+    lastKindRef.current = next;
+    setKind(next);
     setWinnerIndex(pickWinner(roster.length));
     setRoundNo((r) => r + 1);
     setPhase('play');
