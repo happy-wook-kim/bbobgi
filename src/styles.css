@@ -482,10 +482,14 @@ body {
   0% { transform: scale(2.1); opacity: 0.2; }
   100% { transform: scale(1); opacity: 1; }
 }
-.dice-board {
+.dice-stage {
   position: relative;
   width: min(88vw, 420px);
   aspect-ratio: 1 / 1;
+}
+.dice-board {
+  position: absolute;
+  inset: 0;
   border: 2px solid var(--ink);
   border-radius: 50%; /* 원형 아레나 — 부채꼴 n등분이라 전원 크기·모양 동일 */
   overflow: hidden;
@@ -498,9 +502,9 @@ body {
 .dice-name {
   position: absolute;
   transform: translate(-50%, -50%);
-  font-size: 14px;
-  font-weight: 700;
-  max-width: 30%;
+  font-size: clamp(24px, 6.5vw, 36px); /* 룰렛 라벨과 비슷한 크기 */
+  font-weight: 800;
+  max-width: 34%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -551,7 +555,7 @@ body {
 }
 .dice-face i { border-radius: 50%; }
 .dice-face i.on { background: var(--ink); }
-.slam-fx { position: absolute; z-index: 3; pointer-events: none; }
+.slam-fx { position: absolute; z-index: 5; pointer-events: none; }
 .slam-hand {
   position: absolute;
   font-size: 46px;

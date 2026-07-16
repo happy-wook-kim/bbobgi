@@ -69,7 +69,7 @@ export function DiceSlam({ items, onWin }: Props) {
   const [doneZone, setDoneZone] = useState(-1);
   const [pos, setPos] = useState<Vec>({ x: 0.5, y: 0.5 });
   const [slamsLeft, setSlamsLeft] = useState(0);
-  const [fx, setFx] = useState<{ x: number; y: number; key: number } | null>(null);
+  const [fx, setFx] = useState<{ x: number; y: number; key: number; scale: number } | null>(null);
 
   const bodyRef = useRef<DiceBody | null>(null);
   const slamsRef = useRef(0);
@@ -124,7 +124,9 @@ export function DiceSlam({ items, onWin }: Props) {
     }
     if (slammed) {
       setSlamsLeft(slamsRef.current);
-      setFx({ x: body.pos.x, y: body.pos.y, key: now });
+      // 카운트다운(마지막 5회)엔 강타 세기에 맞춰 손바닥도 점점 커진다
+      const scale = slamsRef.current > 5 ? 1 : 1.2 + (5 - slamsRef.current) * 0.22;
+      setFx({ x: body.pos.x, y: body.pos.y, key: now, scale });
     }
     bodyRef.current = body;
     move(body.pos);
@@ -186,8 +188,9 @@ export function DiceSlam({ items, onWin }: Props) {
         </p>
       )}
 
-      <div className="dice-board">
-        <svg className="dice-sectors" viewBox="0 0 100 100" aria-hidden>
+      <div className="dice-stage">
+        <div className="dice-board">
+          <svg className="dice-sectors" viewBox="0 0 100 100" aria-hidden>
           {done && <path d={sectorPath(doneZone, n)} className="dice-sector-hit" />}
           {items.map((_, i) => {
             const a = -Math.PI / 2 + (i * Math.PI * 2) / n;
@@ -246,9 +249,16 @@ export function DiceSlam({ items, onWin }: Props) {
             </span>
           </>
         )}
+        </div>
 
+        {/* 보드(overflow hidden) 밖 레이어 — 손바닥이 원 가장자리에서 잘리지 않는다 */}
         {fx && (
-          <span key={fx.key} className="slam-fx" style={{ left: `${fx.x * 100}%`, top: `${fx.y * 100}%` }} aria-hidden>
+          <span
+            key={fx.key}
+            className="slam-fx"
+            style={{ left: `${fx.x * 100}%`, top: `${fx.y * 100}%`, transform: `scale(${fx.scale})` }}
+            aria-hidden
+          >
             <i className="slam-ring" />
             <i className="slam-hand">✋</i>
           </span>
