@@ -6,7 +6,7 @@ import {
   slamImpulse,
   isStopped,
   randSlamCount,
-  SLAM_TRIGGER,
+  slamInterval,
 } from './dice';
 
 /** 결정적 테스트용 LCG */
@@ -55,6 +55,32 @@ describe('randSlamCount', () => {
   });
 });
 
+describe('slamInterval', () => {
+  it('초반엔 매우 빠르고(≤0.2s) 점차 느려지다 마지막 5회는 0.9s다', () => {
+    const initial = 20;
+    // 첫 슬램(remaining=initial)은 아주 빠르게
+    expect(slamInterval(initial, initial)).toBeLessThanOrEqual(0.2);
+    // 남을수록 간격이 단조 증가
+    let prev = 0;
+    for (let remaining = initial; remaining > 5; remaining--) {
+      const iv = slamInterval(remaining, initial);
+      expect(iv).toBeGreaterThanOrEqual(prev);
+      prev = iv;
+    }
+    // 마지막 5회(5,4,3,2,1)는 현재 페이스 고정
+    for (let remaining = 5; remaining >= 1; remaining--) {
+      expect(slamInterval(remaining, initial)).toBeCloseTo(0.9, 9);
+    }
+  });
+
+  it('최소 횟수(10)에서도 동일한 규칙이 성립한다', () => {
+    const initial = 10;
+    expect(slamInterval(initial, initial)).toBeLessThanOrEqual(0.2);
+    expect(slamInterval(6, initial)).toBeLessThan(0.9);
+    expect(slamInterval(5, initial)).toBeCloseTo(0.9, 9);
+  });
+});
+
 describe('stepBody / slamImpulse', () => {
   it('마찰로 감속해 15초 안에 멈추고 보드 밖으로 나가지 않는다', () => {
     for (let seed = 1; seed <= 30; seed++) {
@@ -86,7 +112,7 @@ describe('stepBody / slamImpulse', () => {
       const hit = slamImpulse(body, rand);
       expect(hit.pos).toEqual(body.pos);
       const speed = Math.hypot(hit.vel.x, hit.vel.y);
-      expect(speed).toBeGreaterThan(SLAM_TRIGGER);
+      expect(speed).toBeGreaterThan(0.5);
     }
   });
 });
@@ -106,13 +132,15 @@ describe('자동 슬램 게임의 구역 확률', () => {
       const a = rand() * Math.PI * 2;
       const mag = 1.1 + rand() * 0.6;
       body.vel = { x: Math.cos(a) * mag, y: Math.sin(a) * mag };
-      let slams = randSlamCount(rand);
+      const initial = randSlamCount(rand);
+      let slams = initial;
+      let nextSlamAt = slamInterval(initial, initial);
       for (let t = 0; t < 90; t += 1 / 60) {
         body = stepBody(body, 1 / 60);
-        const speed = Math.hypot(body.vel.x, body.vel.y);
-        if (slams > 0 && speed < SLAM_TRIGGER) {
+        if (slams > 0 && t >= nextSlamAt) {
           body = slamImpulse(body, rand);
           slams--;
+          nextSlamAt = t + slamInterval(slams, initial);
         } else if (slams === 0 && isStopped(body)) {
           break;
         }

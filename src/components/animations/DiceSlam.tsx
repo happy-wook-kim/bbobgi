@@ -3,8 +3,8 @@ import type { DiceBody, Vec } from '../../engine/dice';
 import {
   isStopped,
   randSlamCount,
-  SLAM_TRIGGER,
   slamImpulse,
+  slamInterval,
   stepBody,
   zoneOf,
   zoneRects,
@@ -50,6 +50,9 @@ export function DiceSlam({ items, onWin }: Props) {
 
   const bodyRef = useRef<DiceBody | null>(null);
   const slamsRef = useRef(0);
+  const initialSlamsRef = useRef(0);
+  const simTimeRef = useRef(0); // 시뮬레이션 누적 시간(초)
+  const nextSlamAtRef = useRef(0);
   const lastFrame = useRef(0);
   const posRef = useRef<Vec>({ x: 0.5, y: 0.5 });
   const rotRef = useRef({ rx: -18, ry: 24 });
@@ -76,12 +79,14 @@ export function DiceSlam({ items, onWin }: Props) {
     while (remaining > 0) {
       const h = Math.min(remaining, 1 / 60);
       remaining -= h;
+      simTimeRef.current += h;
       body = stepBody(body, h);
-      const speed = Math.hypot(body.vel.x, body.vel.y);
-      if (slamsRef.current > 0 && speed < SLAM_TRIGGER) {
-        // 힘이 빠질 때마다 ✋가 자동으로 내려친다 — 남은 횟수 카운트다운
+      if (slamsRef.current > 0 && simTimeRef.current >= nextSlamAtRef.current) {
+        // 예약된 시각마다 ✋가 자동으로 내려친다 — 초반 빵빵빵, 마지막 5회는 카운트다운 페이스
         body = slamImpulse(body);
         slamsRef.current -= 1;
+        nextSlamAtRef.current =
+          simTimeRef.current + slamInterval(slamsRef.current, initialSlamsRef.current);
         slammed = true;
       } else if (slamsRef.current === 0 && isStopped(body)) {
         bodyRef.current = body;
@@ -114,6 +119,9 @@ export function DiceSlam({ items, onWin }: Props) {
     const mag = 1.1 + Math.random() * 0.6;
     bodyRef.current = { pos: start, vel: { x: Math.cos(a) * mag, y: Math.sin(a) * mag } };
     slamsRef.current = randSlamCount();
+    initialSlamsRef.current = slamsRef.current;
+    simTimeRef.current = 0;
+    nextSlamAtRef.current = slamInterval(slamsRef.current, slamsRef.current);
     setSlamsLeft(slamsRef.current);
     lastFrame.current = performance.now();
     rafRef.current = requestAnimationFrame(loop);
@@ -138,11 +146,17 @@ export function DiceSlam({ items, onWin }: Props) {
       </h2>
 
       {thrown && !done && (
-        <p className="dice-count" key={slamsLeft}>
-          {slamsLeft > 0 ? (
+        <p
+          className={`dice-count ${slamsLeft <= 5 && slamsLeft > 0 ? 'is-final' : ''}`}
+          key={slamsLeft}
+        >
+          {slamsLeft > 5 ? (
             <>
               ✋ 남은 손바닥 <b>{slamsLeft}</b>번
             </>
+          ) : slamsLeft > 0 ? (
+            // 마지막 5회: 5-4-3-2-1 카운트다운 — 숫자가 점점 커지며 빵! 빵!
+            <b style={{ fontSize: `${28 + (5 - slamsLeft) * 9}px` }}>{slamsLeft}</b>
           ) : (
             '이제 멈춥니다…'
           )}
