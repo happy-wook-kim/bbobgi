@@ -391,10 +391,51 @@ body {
 }
 .race-horse {
   position: absolute;
-  bottom: 26px;
-  width: 34px;
-  font-size: 26px;
-  line-height: 34px;
+  bottom: 22px;
+  width: 40px;
+  font-size: 32px; /* 말을 더 크게 */
+  line-height: 40px;
+}
+.race-horse.is-running { --lean: -4deg; }
+.race-horse.is-sprinting { --lean: -9deg; } /* 스퍼트: 앞으로 쏠린 자세 */
+.race-horse.is-boosting { --lean: -13deg; } /* 부스터: 최대 전경사 */
+.race-horse.is-tired { --lean: 3deg; } /* 지침: 몸이 들림 */
+/* 발밑 먼지 퍼프 — 달리는 동안 뒤로 흩날린다 */
+.race-horse.is-running::after,
+.race-horse.is-sprinting::after,
+.race-horse.is-boosting::after {
+  content: '';
+  position: absolute;
+  left: -10px;
+  bottom: 2px;
+  width: 12px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(140, 140, 134, 0.45);
+  animation: dust 0.4s linear infinite;
+}
+@keyframes dust {
+  0% { transform: translateX(0) scale(0.5); opacity: 0.7; }
+  100% { transform: translateX(-14px) scale(1.4); opacity: 0; }
+}
+/* 부스터 스피드라인 — 뒤로 뻗는 잔상 */
+.race-horse.is-boosting::before {
+  content: '';
+  position: absolute;
+  left: -30px;
+  top: 12px;
+  width: 26px;
+  height: 16px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(23, 23, 26, 0.35) 0 2px,
+    transparent 2px 7px
+  );
+  animation: speedlines 0.22s linear infinite;
+}
+@keyframes speedlines {
+  0% { transform: translateX(6px); opacity: 0.9; }
+  100% { transform: translateX(-6px); opacity: 0.2; }
 }
 .race-hud {
   position: absolute;
@@ -437,7 +478,8 @@ body {
 .race-glyph {
   display: inline-block;
   font-style: normal;
-  transform: scaleX(-1); /* 🐎가 왼쪽을 보므로 진행 방향(오른쪽)으로 뒤집기 */
+  /* 🐎 방향 뒤집기 + 상태별 몸 기울기(--lean) */
+  transform: scaleX(-1) rotate(var(--lean, 0deg));
 }
 .race-horse.is-running .race-glyph { animation: gallop 0.35s ease-in-out infinite alternate; }
 .race-horse.is-stumbling .race-glyph { animation: stumble 0.3s ease-in-out infinite; }
@@ -445,8 +487,8 @@ body {
 .race-horse.is-sprinting .race-glyph { animation: gallop 0.24s ease-in-out infinite alternate; } /* 스퍼트: 잰걸음 */
 .race-horse.is-tired .race-glyph { animation: gallop 0.55s ease-in-out infinite alternate; } /* 지침: 무거운 걸음 */
 @keyframes gallop {
-  from { transform: scaleX(-1) translateY(0); }
-  to { transform: scaleX(-1) translateY(-4px); }
+  from { transform: scaleX(-1) rotate(var(--lean, 0deg)) translateY(0); }
+  to { transform: scaleX(-1) rotate(var(--lean, 0deg)) translateY(-5px); }
 }
 @keyframes stumble {
   0%, 100% { transform: scaleX(-1) rotate(-14deg); }

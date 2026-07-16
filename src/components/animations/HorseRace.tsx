@@ -12,7 +12,7 @@ type Props = {
 // 트랙 전체(벽~결승선)가 항상 화면 안에 보인다 — 다른 게임들과 같은 방식.
 const PAD_L = 12; // 출발 벽 위치
 const PAD_R = 46; // 결승선 + 순위 뱃지 공간
-const HORSE_W = 34;
+const HORSE_W = 40;
 const RUN_SPAN = `(100% - ${PAD_L + PAD_R + HORSE_W}px)`; // 달리는 구간 폭
 const KMH = 360000; // 진행도/ms → km/h 환산(코스 100m 기준) — 평균 속도가 약 45km/h가 된다
 
