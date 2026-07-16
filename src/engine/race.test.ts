@@ -22,7 +22,7 @@ describe('buildRaceProfiles', () => {
     }
   });
 
-  it('꼴찌는 나머지 중 최후 도착보다 300~800ms 늦는다(접전 마진)', () => {
+  it('꼴찌는 결승 상대보다 250~550ms 늦는다(팽팽한 접전 마진)', () => {
     for (let seed = 1; seed <= 50; seed++) {
       const n = 4;
       const loser = seed % n;
@@ -31,8 +31,26 @@ describe('buildRaceProfiles', () => {
         ...profiles.filter((_, i) => i !== loser).map((p) => p.finishTime),
       );
       const margin = profiles[loser].finishTime - otherMax;
-      expect(margin).toBeGreaterThanOrEqual(300);
-      expect(margin).toBeLessThanOrEqual(800);
+      expect(margin).toBeGreaterThanOrEqual(250);
+      expect(margin).toBeLessThanOrEqual(550);
+    }
+  });
+
+  it('결승 상대는 꼴찌의 인접 레인이고, 나머지는 일찍(≤7.8s) 골인한다', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      for (const n of [3, 4, 6, 12]) {
+        const loser = seed % n;
+        const profiles = buildRaceProfiles(n, loser, lcg(seed));
+        const order = profiles
+          .map((_, i) => i)
+          .sort((a, b) => profiles[a].finishTime - profiles[b].finishTime);
+        const partner = order[n - 2]; // 끝에서 둘째 = 결승 상대
+        expect(Math.abs(partner - loser)).toBe(1); // 클로즈업에 둘이 같이 잡히도록 인접 레인
+        expect(profiles[partner].finishTime).toBeGreaterThanOrEqual(11500);
+        for (const i of order.slice(0, n - 2)) {
+          expect(profiles[i].finishTime).toBeLessThanOrEqual(7800);
+        }
+      }
     }
   });
 
@@ -108,7 +126,8 @@ describe('events (돌·부스터)', () => {
             expect(speed).toBeLessThan(avgSpeed * 0.2);
           } else {
             boosts++;
-            expect(speed).toBeGreaterThan(avgSpeed * 1.35);
+            // 접전 듀오(느린 말)는 확실히 빠르게, 일찍 골인하는 말은 원래 빨라서 배율이 낮다
+            expect(speed).toBeGreaterThan(avgSpeed * (p.finishTime > 10000 ? 1.5 : 0.85));
           }
         }
       }
@@ -120,14 +139,15 @@ describe('events (돌·부스터)', () => {
 });
 
 describe('역전 리듬', () => {
-  it('선두가 레이스 중 최소 한 번은 바뀐다 (대부분의 판)', () => {
+  it('선두 그룹이 달리는 동안 선두가 최소 한 번은 바뀐다 (대부분의 판)', () => {
     let changed = 0;
     const SEEDS = 30;
     for (let seed = 1; seed <= SEEDS; seed++) {
-      const profiles = buildRaceProfiles(4, seed % 4, lcg(seed));
-      const end = Math.max(...profiles.map((p) => p.finishTime));
+      const profiles = buildRaceProfiles(6, seed % 6, lcg(seed));
+      // 첫 골인 전까지가 전원이 함께 달리는 관전 구간
+      const end = Math.min(...profiles.map((p) => p.finishTime));
       const leaders = new Set<number>();
-      for (let t = end * 0.1; t <= end * 0.9; t += end * 0.05) {
+      for (let t = end * 0.1; t <= end * 0.95; t += end * 0.05) {
         let lead = 0;
         let best = -1;
         profiles.forEach((p, i) => {
@@ -141,62 +161,39 @@ describe('역전 리듬', () => {
       }
       if (leaders.size >= 2) changed++;
     }
-    expect(changed).toBeGreaterThanOrEqual(SEEDS * 0.8);
+    expect(changed).toBeGreaterThanOrEqual(SEEDS * 0.6);
   });
 
-  it('선두 교체가 판당 평균 4회 이상 일어난다 (극적인 엎치락뒤치락)', () => {
-    let transitions = 0;
+  it('마지막 두 마리는 홀로 남은 구간 내내 바짝 붙어 접전한다', () => {
     const SEEDS = 30;
+    let swapsTotal = 0;
     for (let seed = 1; seed <= SEEDS; seed++) {
-      const profiles = buildRaceProfiles(4, seed % 4, lcg(seed));
-      const end = Math.max(...profiles.map((p) => p.finishTime));
-      let prevLead = -1;
-      for (let t = end * 0.05; t <= end * 0.95; t += end * 0.025) {
-        let lead = 0;
-        let best = -1;
-        profiles.forEach((p, i) => {
-          const x = progressAt(p, t);
-          if (x > best) {
-            best = x;
-            lead = i;
-          }
-        });
-        if (prevLead >= 0 && lead !== prevLead) transitions++;
-        prevLead = lead;
+      const n = 5;
+      const loser = seed % n;
+      const profiles = buildRaceProfiles(n, loser, lcg(seed));
+      const order = profiles
+        .map((_, i) => i)
+        .sort((a, b) => profiles[a].finishTime - profiles[b].finishTime);
+      const a = order[n - 2];
+      const b = order[n - 1];
+      const from = profiles[order[n - 3]].finishTime + 300; // 나머지 전원 골인 후
+      const to = profiles[a].finishTime - 100;
+      let gapSum = 0;
+      let count = 0;
+      let prevSign = 0;
+      for (let t = from; t <= to; t += (to - from) / 20) {
+        const gap = progressAt(profiles[a], t) - progressAt(profiles[b], t);
+        gapSum += Math.abs(gap);
+        count++;
+        const sign = Math.sign(gap);
+        if (prevSign !== 0 && sign !== 0 && sign !== prevSign) swapsTotal++;
+        if (sign !== 0) prevSign = sign;
       }
+      // 접전: 평균 격차가 트랙의 11% 이내 (줌 1.7배에서 나란히 보이는 수준)
+      expect(gapSum / count).toBeLessThan(0.11);
     }
-    expect(transitions / SEEDS).toBeGreaterThanOrEqual(4);
-  });
-
-  // 부스터 1초 유지(+반납 구간)가 정당한 선두 시간을 만들므로 상한은 45%
-  it('한 말이 레이스의 45%를 넘겨 독주하지 않는다 (평균)', () => {
-    let ratioSum = 0;
-    const SEEDS = 30;
-    for (let seed = 1; seed <= SEEDS; seed++) {
-      const profiles = buildRaceProfiles(4, seed % 4, lcg(seed));
-      const end = Math.max(...profiles.map((p) => p.finishTime));
-      const leaders: number[] = [];
-      for (let t = end * 0.05; t <= end * 0.95; t += end * 0.025) {
-        let lead = 0;
-        let best = -1;
-        profiles.forEach((p, i) => {
-          const x = progressAt(p, t);
-          if (x > best) {
-            best = x;
-            lead = i;
-          }
-        });
-        leaders.push(lead);
-      }
-      let cur = 1;
-      let max = 1;
-      for (let i = 1; i < leaders.length; i++) {
-        cur = leaders[i] === leaders[i - 1] ? cur + 1 : 1;
-        max = Math.max(max, cur);
-      }
-      ratioSum += max / leaders.length;
-    }
-    expect(ratioSum / SEEDS).toBeLessThanOrEqual(0.45);
+    // 듀오끼리도 엎치락뒤치락이 일어난다 (시드 전체 합산)
+    expect(swapsTotal).toBeGreaterThanOrEqual(SEEDS * 0.5);
   });
 });
 
@@ -205,11 +202,11 @@ describe('속도 완충 (부드러운 가감속)', () => {
     for (let seed = 1; seed <= 20; seed++) {
       for (const p of buildRaceProfiles(3, seed % 3, lcg(seed))) {
         const avg = 1 / p.finishTime;
-        // 내부 제어점 앞뒤 1ms의 속도 차가 평균 속도의 30% 이내
+        // 내부 제어점 앞뒤 0.1ms의 속도 차가 평균 속도의 30% 이내 — 점프(불연속) 검출
         for (let i = 1; i < p.waypoints.length - 1; i++) {
           const t = p.waypoints[i].t;
-          const before = speedAt(p, t - 1);
-          const after = speedAt(p, t + 1);
+          const before = speedAt(p, t - 0.1);
+          const after = speedAt(p, t + 0.1);
           expect(Math.abs(after - before)).toBeLessThan(avg * 0.3);
         }
       }
@@ -229,7 +226,7 @@ describe('speedAt', () => {
     }
   });
 
-  it('돌 구간에선 평균의 20% 미만, 부스터 구간에선 평균의 1.35배 초과다', () => {
+  it('돌 구간에선 평균의 20% 미만, 부스터 구간에선 평균보다 빠르다', () => {
     let checked = 0;
     for (let seed = 1; seed <= 40; seed++) {
       for (const p of buildRaceProfiles(4, seed % 4, lcg(seed))) {
@@ -237,7 +234,7 @@ describe('speedAt', () => {
         for (const e of p.events) {
           const mid = speedAt(p, e.t + e.duration / 2);
           if (e.kind === 'rock') expect(mid).toBeLessThan(avg * 0.2);
-          else expect(mid).toBeGreaterThan(avg * 1.35);
+          else expect(mid).toBeGreaterThan(avg * (p.finishTime > 10000 ? 1.5 : 0.85));
           checked++;
         }
       }

@@ -54,16 +54,19 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
   let zoomStyle: CSSProperties | undefined;
   if (duo && started && !done && t >= duo.from) {
     const W = trackRef.current?.clientWidth ?? 360;
+    const H = n * LANE_STEP - 5; // 트랙 실제 높이
     const usablePx = W - PAD_L - PAD_R - HORSE_W;
     const midP = (progressAt(profiles[duo.a], t) + progressAt(profiles[duo.b], t)) / 2;
     const x = PAD_L + midP * usablePx + HORSE_W / 2;
     const y = ((duo.a + duo.b) / 2) * LANE_STEP + LANE_STEP / 2;
-    // 두 레인이 멀수록 배율을 낮춰 둘 다 화면(H/scale 창) 안에 남긴다
-    const dist = Math.abs(duo.a - duo.b) * LANE_STEP;
-    const scale = Math.max(1, Math.min(1.7, (n * LANE_STEP) / (dist + 110)));
+    const scale = Math.max(1, Math.min(1.7, H / (Math.abs(duo.a - duo.b) * LANE_STEP + 110)));
+    // 듀오 중심을 뷰포트 중앙으로 — 단, 트랙 밖 여백이 보이지 않게 클램프(가장자리 레인 잘림 방지)
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    const tx = clamp(W / 2 - x * scale, W - W * scale, 0);
+    const ty = clamp(H / 2 - y * scale, H - H * scale, 0);
     zoomStyle = {
-      transform: `scale(${scale.toFixed(3)})`,
-      transformOrigin: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
+      transform: `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${scale.toFixed(3)})`,
+      transformOrigin: '0 0',
     };
   }
   const rafRef = useRef(0);

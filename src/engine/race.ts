@@ -5,18 +5,22 @@ export type RaceEventKind = 'rock' | 'boost';
 export type RaceEvent = { kind: RaceEventKind; t: number; duration: number; x: number };
 export type RaceProfile = { finishTime: number; waypoints: Waypoint[]; events: RaceEvent[] };
 
-const FASTEST = 9500; // 1등 도착 목표(ms) — 기본 속도를 느리게, 레이스 약 12초
-const SPREAD = 500; // 1등 ~ 꼴찌 직전까지 도착 시각이 퍼지는 폭 — 좁을수록 팩이 붙어 달려 역전이 잦다
-const MARGIN_MIN = 300; // 꼴찌 접전 마진(ms)
-const MARGIN_MAX = 800;
+// 선두 그룹(마지막 둘 제외)은 일찍 골인시키고, 마지막 두 마리가 길게 남아 접전한다
+const EARLY_FROM = 6000; // 선두 그룹 도착 시작(ms)
+const EARLY_TO = 7500; // 선두 그룹 도착 끝
+const DUEL_TIME = 11500; // 결승 상대(끝에서 둘째) 도착 — 이때까지 둘만의 접전
+const DUEL_JITTER = 500;
+const MARGIN_MIN = 250; // 꼴찌 접전 마진(ms) — 더 팽팽하게
+const MARGIN_MAX = 550;
 const ROCK_DX = 0.002; // 돌 구간 이동량: 거의 정지
 // 이벤트는 절대 시간 고정 — 남는 시간은 일반 구간이 흡수(스케일)하므로 finishTime은 불변
 const ROCK_MS_MIN = 350; // 돌에 걸려 서 있는 시간(ms)
 const ROCK_MS_MAX = 550;
 const BOOST_MS_MIN = 1000; // 부스터 지속 시간(ms) — 끊기지 않고 최소 1초 유지
 const BOOST_MS_MAX = 1200;
-const BOOST_DX_MIN = 0.18; // 부스터로 내달리는 거리(진행도) — 다음 아이템(간격 0.25)을 넘지 않게
-const BOOST_DX_MAX = 0.21;
+const BOOST_MULT = 1.8; // 부스터 속도 = 자기 평균 속도의 배수 (빠른 말이든 느린 말이든 체감 동일)
+const BOOST_DX_MIN = 0.12; // 부스터로 내달리는 거리(진행도) 하한
+const BOOST_DX_MAX = 0.21; // 상한 — 다음 아이템(간격 0.25)을 넘지 않게
 const MS_TO_RAW = 1 / 10000; // 절대 시간을 편차 추적용 raw 단위로 환산(레이스 ≈ 10초 기준)
 // 일반 구간은 느림/빠름 밴드를 번갈아 탄다 — 뒤처진 말이 다음 구간에 다시 치고 나오는 고무줄 리듬
 // 대비를 크게 잡아 엎치락뒤치락이 극적으로 보이게 한다
@@ -37,14 +41,20 @@ export function buildRaceProfiles(
   loserIndex: number,
   rand: () => number = Math.random,
 ): RaceProfile[] {
-  const others = n - 1;
-  const times: number[] = [];
-  for (let k = 0; k < others; k++) {
-    const base = others === 1 ? 0 : (k * SPREAD) / (others - 1);
-    times.push(FASTEST + base + rand() * 200);
-  }
-  const assigned = shuffle(times, rand); // 꼴찌 제외 도착 순서를 무작위 배정
-  const loserTime = Math.max(...times) + MARGIN_MIN + rand() * (MARGIN_MAX - MARGIN_MIN);
+  // 결승 상대는 꼴찌의 바로 위/아래 레인 — 접전 클로즈업에 둘이 항상 함께 잡힌다 (연출용 배정, 공정성 불변)
+  const partner =
+    loserIndex === 0 ? 1 : loserIndex === n - 1 ? n - 2 : loserIndex + (rand() < 0.5 ? -1 : 1);
+  // 나머지 선두 그룹은 6.0~7.5초 사이에 빨리 들어온다
+  const earlyCount = n - 2;
+  const earlyTimes = shuffle(
+    Array.from({ length: earlyCount }, (_, k) => {
+      const base = earlyCount <= 1 ? 0 : (k * (EARLY_TO - EARLY_FROM)) / (earlyCount - 1);
+      return EARLY_FROM + base + rand() * 200;
+    }),
+    rand,
+  );
+  const partnerTime = DUEL_TIME + rand() * DUEL_JITTER; // 꼴찌와 끝까지 붙는 결승 상대
+  const loserTime = partnerTime + MARGIN_MIN + rand() * (MARGIN_MAX - MARGIN_MIN);
 
   // 트랙을 위치 기준 조각으로 구성한다: 아이템은 진행도 1/4·2/4·3/4 지점 고정(일정 간격),
   // 각 조각의 상대 시간을 계산한 뒤 총합이 finishTime이 되도록 정규화한다.
@@ -97,7 +107,11 @@ export function buildRaceProfiles(
         cursor = e.x + ROCK_DX;
       } else {
         const absMs = BOOST_MS_MIN + rand() * (BOOST_MS_MAX - BOOST_MS_MIN);
-        const dx = BOOST_DX_MIN + rand() * (BOOST_DX_MAX - BOOST_DX_MIN);
+        // 자기 평균 속도의 BOOST_MULT배로 내달린 거리 — 상·하한 클램프
+        const dx = Math.max(
+          BOOST_DX_MIN,
+          Math.min(BOOST_DX_MAX, (BOOST_MULT * absMs) / finishTime),
+        );
         pieces.push({ endX: e.x + dx, rawT: 0, absMs, ev: k });
         rawSum += absMs * MS_TO_RAW; // 시간 대비 크게 전진했으므로(dev<0) 다음 조각들이 숨 고르기를 한다
         cursor = e.x + dx;
@@ -127,7 +141,8 @@ export function buildRaceProfiles(
 
   let cursor = 0;
   return Array.from({ length: n }, (_, i) => {
-    const finishTime = i === loserIndex ? loserTime : assigned[cursor++];
+    const finishTime =
+      i === loserIndex ? loserTime : i === partner ? partnerTime : earlyTimes[cursor++];
     return { finishTime, ...buildFor(finishTime) };
   });
 }
