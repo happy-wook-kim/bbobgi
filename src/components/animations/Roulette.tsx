@@ -122,10 +122,7 @@ export function Roulette({ items, onWin }: Props) {
       </h2>
       <div className="wheel-wrap">
         <div className="wheel-pointer" aria-hidden>▾</div>
-        <div
-          className={`wheel ${done ? 'is-winner' : ''}`}
-          style={{ background, transform: `rotate(${rotation}deg)` }}
-        >
+        <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
           {items.map((label, i) => {
             const angle = i * sliceAngle;
             return (

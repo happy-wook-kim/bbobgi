@@ -226,7 +226,6 @@ body {
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
 }
 .wheel-label-text.is-winner { font-size: clamp(32px, 8.6vw, 48px); font-weight: 800; }
-.wheel.is-winner { border-color: var(--focus); } /* 선택 확정 = 보라 테두리 */
 
 /* ladder */
 .ladder-scroll { width: 100%; overflow-x: auto; padding: 4px 0; }
