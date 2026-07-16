@@ -15,14 +15,15 @@ export function randSlamCount(rand: () => number = Math.random): number {
 
 const INTERVAL_FAST = 0.14; // 첫 슬램 간격(초) — 빵빵빵 몰아친다
 const INTERVAL_RAMP_TO = 0.55; // 6회 남았을 때 간격
-const INTERVAL_FINAL = 0.9; // 마지막 5회: 카운트다운 페이스
+const COUNTDOWN_START = 0.7; // 카운트다운 첫 간격(5가 표시될 때)
+const COUNTDOWN_STEP = 0.15; // 카운트다운 한 칸마다 더 느려지는 폭
 
 /**
  * 다음 슬램까지의 간격(초). 초반엔 매우 빠르게 몰아치다 점차 느려지고,
- * 마지막 5회는 5-4-3-2-1 카운트다운처럼 일정한 페이스로 친다.
+ * 마지막 5회(5-4-3-2-1 카운트다운)는 한 칸마다 더 느려져 긴장을 끌어올린다.
  */
 export function slamInterval(remaining: number, initial: number): number {
-  if (remaining <= 5) return INTERVAL_FINAL;
+  if (remaining <= 5) return COUNTDOWN_START + (5 - remaining) * COUNTDOWN_STEP;
   const span = Math.max(initial - 6, 1);
   const p = (initial - remaining) / span;
   return INTERVAL_FAST + (INTERVAL_RAMP_TO - INTERVAL_FAST) * p;

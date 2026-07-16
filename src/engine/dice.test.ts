@@ -51,18 +51,20 @@ describe('randSlamCount / slamInterval / slamPower', () => {
     expect(randSlamCount(() => 0.999)).toBe(20);
   });
 
-  it('간격은 초반 빠르고(≤0.2s) 점차 느려지다 마지막 5회는 0.9s다', () => {
+  it('간격은 초반 빠르고(≤0.2s) 점차 느려지며, 카운트다운(5→1)은 더 급격히 느려진다', () => {
     const initial = 20;
     expect(slamInterval(initial, initial)).toBeLessThanOrEqual(0.2);
     let prev = 0;
-    for (let remaining = initial; remaining > 5; remaining--) {
+    // 초반 램프부터 카운트다운 끝까지 전 구간 단조 증가
+    for (let remaining = initial; remaining >= 1; remaining--) {
       const iv = slamInterval(remaining, initial);
       expect(iv).toBeGreaterThanOrEqual(prev);
       prev = iv;
     }
-    for (let remaining = 5; remaining >= 1; remaining--) {
-      expect(slamInterval(remaining, initial)).toBeCloseTo(0.9, 9);
-    }
+    // 카운트다운: 5는 0.7초에서 시작해 한 칸마다 0.15초씩 느려져 1에서 1.3초
+    expect(slamInterval(5, initial)).toBeCloseTo(0.7, 9);
+    expect(slamInterval(3, initial)).toBeCloseTo(1.0, 9);
+    expect(slamInterval(1, initial)).toBeCloseTo(1.3, 9);
   });
 
   it('카운트다운(5회)부터 강타 — 남을수록 세지고 마지막이 가장 세다', () => {

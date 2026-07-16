@@ -214,7 +214,7 @@ body {
 }
 .wheel {
   position: relative; width: 100%; height: 100%; border-radius: 50%;
-  border: 2px solid var(--ink); will-change: transform; /* 검정, 주사위 원래 굵기 */
+  border: 4px solid var(--ink); will-change: transform; /* 검정, 좀 더 굵게 */
 }
 .wheel-label {
   position: absolute; left: 0; top: 0; width: 100%; height: 50%;
