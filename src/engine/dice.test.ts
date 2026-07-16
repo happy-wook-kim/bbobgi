@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
-  zoneRects,
+  sectorMid,
   zoneOf,
   stepBody,
   slamImpulse,
+  slamPower,
   isStopped,
   randSlamCount,
   slamInterval,
+  WALL_R,
 } from './dice';
 
 /** 결정적 테스트용 LCG */
@@ -15,87 +17,80 @@ const lcg = (seed: number) => () => {
   return seed / 4294967296;
 };
 
-describe('zoneRects / zoneOf', () => {
-  it('구역 면적이 전부 1/n로 균등하고 보드(0~1) 안에 있다', () => {
+describe('부채꼴 구역 (zoneOf / sectorMid)', () => {
+  it('각 부채꼴의 중앙각 지점은 자기 인덱스로 판정된다', () => {
     for (let n = 2; n <= 12; n++) {
-      const rects = zoneRects(n);
-      expect(rects).toHaveLength(n);
-      let total = 0;
-      for (const r of rects) {
-        expect(Math.abs(r.w * r.h - 1 / n)).toBeLessThan(1e-9);
-        expect(r.x).toBeGreaterThanOrEqual(-1e-9);
-        expect(r.y).toBeGreaterThanOrEqual(-1e-9);
-        expect(r.x + r.w).toBeLessThanOrEqual(1 + 1e-9);
-        expect(r.y + r.h).toBeLessThanOrEqual(1 + 1e-9);
-        total += r.w * r.h;
+      for (let i = 0; i < n; i++) {
+        const mid = sectorMid(i, n);
+        for (const r of [0.1, 0.25, 0.4]) {
+          const p = { x: 0.5 + Math.cos(mid) * r, y: 0.5 + Math.sin(mid) * r };
+          expect(zoneOf(p, n)).toBe(i);
+        }
       }
-      expect(Math.abs(total - 1)).toBeLessThan(1e-9);
     }
   });
 
-  it('각 구역 중심 좌표는 자기 인덱스로 판정된다', () => {
+  it('점을 한 부채꼴 각도만큼 돌리면 구역 인덱스가 1씩 증가한다 (합동 분할)', () => {
     for (let n = 2; n <= 12; n++) {
-      zoneRects(n).forEach((r, i) => {
-        expect(zoneOf({ x: r.x + r.w / 2, y: r.y + r.h / 2 }, n)).toBe(i);
-      });
+      const step = (Math.PI * 2) / n;
+      const rand = lcg(n);
+      for (let k = 0; k < 20; k++) {
+        const a = rand() * Math.PI * 2;
+        const r = 0.05 + rand() * 0.38;
+        const z0 = zoneOf({ x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r }, n);
+        const z1 = zoneOf({ x: 0.5 + Math.cos(a + step) * r, y: 0.5 + Math.sin(a + step) * r }, n);
+        expect(z1).toBe((z0 + 1) % n);
+      }
     }
   });
 });
 
-describe('randSlamCount', () => {
-  it('10~20 사이의 정수를 반환한다', () => {
-    for (const r of [0, 0.001, 0.5, 0.999]) {
-      const c = randSlamCount(() => r);
-      expect(Number.isInteger(c)).toBe(true);
-      expect(c).toBeGreaterThanOrEqual(10);
-      expect(c).toBeLessThanOrEqual(20);
-    }
+describe('randSlamCount / slamInterval / slamPower', () => {
+  it('슬램 횟수는 10~20 사이의 정수다', () => {
     expect(randSlamCount(() => 0)).toBe(10);
     expect(randSlamCount(() => 0.999)).toBe(20);
   });
-});
 
-describe('slamInterval', () => {
-  it('초반엔 매우 빠르고(≤0.2s) 점차 느려지다 마지막 5회는 0.9s다', () => {
+  it('간격은 초반 빠르고(≤0.2s) 점차 느려지다 마지막 5회는 0.9s다', () => {
     const initial = 20;
-    // 첫 슬램(remaining=initial)은 아주 빠르게
     expect(slamInterval(initial, initial)).toBeLessThanOrEqual(0.2);
-    // 남을수록 간격이 단조 증가
     let prev = 0;
     for (let remaining = initial; remaining > 5; remaining--) {
       const iv = slamInterval(remaining, initial);
       expect(iv).toBeGreaterThanOrEqual(prev);
       prev = iv;
     }
-    // 마지막 5회(5,4,3,2,1)는 현재 페이스 고정
     for (let remaining = 5; remaining >= 1; remaining--) {
       expect(slamInterval(remaining, initial)).toBeCloseTo(0.9, 9);
     }
   });
 
-  it('최소 횟수(10)에서도 동일한 규칙이 성립한다', () => {
-    const initial = 10;
-    expect(slamInterval(initial, initial)).toBeLessThanOrEqual(0.2);
-    expect(slamInterval(6, initial)).toBeLessThan(0.9);
-    expect(slamInterval(5, initial)).toBeCloseTo(0.9, 9);
+  it('카운트다운(5회)부터 강타 — 남을수록 세지고 마지막이 가장 세다', () => {
+    expect(slamPower(6)).toBe(1);
+    expect(slamPower(20)).toBe(1);
+    let prev = 1;
+    for (let remaining = 5; remaining >= 0; remaining--) {
+      const p = slamPower(remaining);
+      expect(p).toBeGreaterThan(prev);
+      prev = p;
+    }
+    expect(slamPower(0)).toBeGreaterThanOrEqual(2); // 마지막 강타: 결과를 알 수 없게 크게 튕긴다
   });
 });
 
-describe('stepBody / slamImpulse', () => {
-  it('마찰로 감속해 15초 안에 멈추고 보드 밖으로 나가지 않는다', () => {
+describe('stepBody / slamImpulse (원형 벽)', () => {
+  it('마찰로 감속해 20초 안에 멈추고 원형 벽(반지름) 밖으로 나가지 않는다', () => {
     for (let seed = 1; seed <= 30; seed++) {
       const rand = lcg(seed);
       let body = {
         pos: { x: 0.5, y: 0.5 },
-        vel: { x: (rand() - 0.5) * 3, y: (rand() - 0.5) * 3 },
+        vel: { x: (rand() - 0.5) * 6, y: (rand() - 0.5) * 6 },
       };
       let stopped = false;
-      for (let t = 0; t < 15; t += 1 / 60) {
+      for (let t = 0; t < 20; t += 1 / 60) {
         body = stepBody(body, 1 / 60);
-        expect(body.pos.x).toBeGreaterThanOrEqual(0);
-        expect(body.pos.x).toBeLessThanOrEqual(1);
-        expect(body.pos.y).toBeGreaterThanOrEqual(0);
-        expect(body.pos.y).toBeLessThanOrEqual(1);
+        const dist = Math.hypot(body.pos.x - 0.5, body.pos.y - 0.5);
+        expect(dist).toBeLessThanOrEqual(WALL_R + 1e-9);
         if (isStopped(body)) {
           stopped = true;
           break;
@@ -105,28 +100,34 @@ describe('stepBody / slamImpulse', () => {
     }
   });
 
-  it('슬램은 위치를 바꾸지 않고 속도를 키운다', () => {
+  it('슬램은 위치를 바꾸지 않고 속도를 키우며, power에 비례한다', () => {
     for (let seed = 1; seed <= 30; seed++) {
       const rand = lcg(seed);
-      const body = { pos: { x: 0.3, y: 0.7 }, vel: { x: 0.01, y: 0 } };
+      const body = { pos: { x: 0.3, y: 0.6 }, vel: { x: 0.01, y: 0 } };
       const hit = slamImpulse(body, rand);
       expect(hit.pos).toEqual(body.pos);
-      const speed = Math.hypot(hit.vel.x, hit.vel.y);
-      expect(speed).toBeGreaterThan(0.5);
+      expect(Math.hypot(hit.vel.x, hit.vel.y)).toBeGreaterThan(0.5);
     }
+    // 같은 rand 시퀀스에서 power 2배 → 속도 2배
+    const mk = () => lcg(42);
+    const base = slamImpulse({ pos: { x: 0.5, y: 0.5 }, vel: { x: 0, y: 0 } }, mk(), 1);
+    const strong = slamImpulse({ pos: { x: 0.5, y: 0.5 }, vel: { x: 0, y: 0 } }, mk(), 2);
+    expect(Math.hypot(strong.vel.x, strong.vel.y)).toBeCloseTo(
+      Math.hypot(base.vel.x, base.vel.y) * 2,
+      9,
+    );
   });
 });
 
-describe('자동 슬램 게임의 구역 확률', () => {
-  it('던지기 + 자동 슬램 10~20회 후 멈춘 구역이 대체로 균등하다 (n=4)', () => {
-    const n = 4;
+describe('자동 슬램 게임의 구역 확률 (원형)', () => {
+  it('던지기 + 자동 슬램(강타 포함) 후 멈춘 부채꼴이 대체로 균등하다 (n=5)', () => {
+    const n = 5;
     const counts = new Array(n).fill(0);
     const GAMES = 600;
     for (let seed = 1; seed <= GAMES; seed++) {
       const rand = lcg(seed * 7919);
-      // 컴포넌트와 동일한 시나리오: 랜덤 시작·던지기 → 속도가 SLAM_TRIGGER 아래면 자동 슬램
       let body = {
-        pos: { x: 0.35 + rand() * 0.3, y: 0.35 + rand() * 0.3 },
+        pos: { x: 0.4 + rand() * 0.2, y: 0.4 + rand() * 0.2 },
         vel: { x: 0, y: 0 },
       };
       const a = rand() * Math.PI * 2;
@@ -135,11 +136,11 @@ describe('자동 슬램 게임의 구역 확률', () => {
       const initial = randSlamCount(rand);
       let slams = initial;
       let nextSlamAt = slamInterval(initial, initial);
-      for (let t = 0; t < 90; t += 1 / 60) {
+      for (let t = 0; t < 120; t += 1 / 60) {
         body = stepBody(body, 1 / 60);
         if (slams > 0 && t >= nextSlamAt) {
-          body = slamImpulse(body, rand);
           slams--;
+          body = slamImpulse(body, rand, slamPower(slams));
           nextSlamAt = t + slamInterval(slams, initial);
         } else if (slams === 0 && isStopped(body)) {
           break;
@@ -147,10 +148,10 @@ describe('자동 슬램 게임의 구역 확률', () => {
       }
       counts[zoneOf(body.pos, n)]++;
     }
-    // 균등(25%) 대비 크게 치우치지 않아야 한다
+    // 균등(20%) 대비 크게 치우치지 않아야 한다
     for (const c of counts) {
-      expect(c / GAMES).toBeGreaterThanOrEqual(0.15);
-      expect(c / GAMES).toBeLessThanOrEqual(0.35);
+      expect(c / GAMES).toBeGreaterThanOrEqual(0.12);
+      expect(c / GAMES).toBeLessThanOrEqual(0.28);
     }
   });
 });

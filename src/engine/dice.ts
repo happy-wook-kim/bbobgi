@@ -1,11 +1,12 @@
 export type Vec = { x: number; y: number };
-export type ZoneRect = { x: number; y: number; w: number; h: number };
 export type DiceBody = { pos: Vec; vel: Vec };
 
-const PAD = 0.06; // 주사위가 벽에 붙지 않는 여유
 const FRICTION = 1.0; // 지수 마찰(1/s) — 낮을수록 오래, 멀리 굴러간다
 const BOUNCE_DAMP = 0.8; // 벽 반사 감쇠
 const STOP_EPS = 0.03; // 정지 판정 속도
+
+/** 원형 보드: 중심 (0.5, 0.5), 주사위 중심이 닿는 벽 반지름. */
+export const WALL_R = 0.44;
 
 /** 게임 시작 시 자동 슬램 횟수: 10~20 랜덤. */
 export function randSlamCount(rand: () => number = Math.random): number {
@@ -22,86 +23,66 @@ const INTERVAL_FINAL = 0.9; // 마지막 5회: 카운트다운 페이스
  */
 export function slamInterval(remaining: number, initial: number): number {
   if (remaining <= 5) return INTERVAL_FINAL;
-  // remaining: initial → 6 으로 줄어드는 동안 FAST → RAMP_TO 로 선형 증가
   const span = Math.max(initial - 6, 1);
   const p = (initial - remaining) / span;
   return INTERVAL_FAST + (INTERVAL_RAMP_TO - INTERVAL_FAST) * p;
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-/** 행별 셀 수(±1)와 높이(셀 수 비례)를 계산한다. 모든 구역 면적 = 1/n. */
-function rowsOf(n: number): { count: number; y: number; h: number; startIdx: number }[] {
-  const cols = Math.ceil(Math.sqrt(n));
-  const rowCount = Math.ceil(n / cols);
-  const base = Math.floor(n / rowCount);
-  const extra = n % rowCount;
-  const rows: { count: number; y: number; h: number; startIdx: number }[] = [];
-  let y = 0;
-  let idx = 0;
-  for (let r = 0; r < rowCount; r++) {
-    const count = base + (r < extra ? 1 : 0);
-    const h = count / n; // 면적 균등: (1/count) * (count/n) = 1/n
-    rows.push({ count, y, h, startIdx: idx });
-    y += h;
-    idx += count;
-  }
-  return rows;
+/**
+ * 슬램 세기 배율. 카운트다운(남은 5회)부터 점점 세져서 확확 튕기고,
+ * 마지막 강타(remaining=0)는 가장 세게 날려 결과를 끝까지 알 수 없게 한다.
+ * remaining은 이 슬램 이후 남는 횟수(화면에 표시되는 숫자).
+ */
+export function slamPower(remaining: number): number {
+  if (remaining > 5) return 1;
+  return 1.2 + (5 - remaining) * 0.18; // 5→1.2 … 0→2.1
 }
 
-/** 참가자 구역 격자. index = 참가자 인덱스, 면적은 전부 1/n. */
-export function zoneRects(n: number): ZoneRect[] {
-  const rects: ZoneRect[] = [];
-  for (const row of rowsOf(n)) {
-    for (let c = 0; c < row.count; c++) {
-      rects.push({ x: c / row.count, y: row.y, w: 1 / row.count, h: row.h });
-    }
-  }
-  return rects;
+/** 부채꼴 i(0-기준, 12시 방향부터 시계 방향)의 중앙각(라디안). */
+export function sectorMid(i: number, n: number): number {
+  return -Math.PI / 2 + ((i + 0.5) * Math.PI * 2) / n;
 }
 
-/** 좌표가 속한 구역 인덱스. */
+/** 좌표가 속한 부채꼴 인덱스 — 모든 구역은 크기·모양이 같은 합동 분할이다. */
 export function zoneOf(pos: Vec, n: number): number {
-  const x = clamp(pos.x, 0, 1 - 1e-9);
-  const y = clamp(pos.y, 0, 1 - 1e-9);
-  for (const row of rowsOf(n)) {
-    if (y < row.y + row.h) {
-      return row.startIdx + Math.min(Math.floor(x * row.count), row.count - 1);
-    }
-  }
-  const last = rowsOf(n).at(-1)!;
-  return last.startIdx + Math.min(Math.floor(x * last.count), last.count - 1);
+  const a = Math.atan2(pos.y - 0.5, pos.x - 0.5) + Math.PI / 2; // 12시 = 0
+  const norm = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  return Math.min(Math.floor((norm / (Math.PI * 2)) * n), n - 1);
 }
 
-/** 지수 마찰 + 벽 반사 한 스텝(dt초). 순수 — 새 객체를 반환한다. */
+/** 지수 마찰 + 원형 벽 반사 한 스텝(dt초). 순수 — 새 객체를 반환한다. */
 export function stepBody(body: DiceBody, dt: number): DiceBody {
   let x = body.pos.x + body.vel.x * dt;
   let y = body.pos.y + body.vel.y * dt;
   let vx = body.vel.x;
   let vy = body.vel.y;
-  if (x < PAD) {
-    x = PAD + (PAD - x);
-    vx = -vx * BOUNCE_DAMP;
-  } else if (x > 1 - PAD) {
-    x = 1 - PAD - (x - (1 - PAD));
-    vx = -vx * BOUNCE_DAMP;
-  }
-  if (y < PAD) {
-    y = PAD + (PAD - y);
-    vy = -vy * BOUNCE_DAMP;
-  } else if (y > 1 - PAD) {
-    y = 1 - PAD - (y - (1 - PAD));
-    vy = -vy * BOUNCE_DAMP;
+  const dx = x - 0.5;
+  const dy = y - 0.5;
+  const dist = Math.hypot(dx, dy);
+  if (dist > WALL_R) {
+    // 법선 방향으로 초과분만큼 안쪽에 두고, 속도의 법선 성분을 반전·감쇠
+    const nx = dx / dist;
+    const ny = dy / dist;
+    const inside = 2 * WALL_R - dist;
+    x = 0.5 + nx * inside;
+    y = 0.5 + ny * inside;
+    const vn = vx * nx + vy * ny;
+    vx = (vx - 2 * vn * nx) * BOUNCE_DAMP;
+    vy = (vy - 2 * vn * ny) * BOUNCE_DAMP;
   }
   const decay = Math.exp(-FRICTION * dt);
   return { pos: { x, y }, vel: { x: vx * decay, y: vy * decay } };
 }
 
-/** 슬램 충격: 보드 중앙 쪽으로 튕기는 방향(+랜덤 편차)에 새 속도를 부여한다. 위치 불변. */
-export function slamImpulse(body: DiceBody, rand: () => number = Math.random): DiceBody {
+/** 슬램 충격: 보드 중앙 쪽으로 튕기는 방향(+랜덤 편차)에 power 배율의 새 속도를 부여한다. */
+export function slamImpulse(
+  body: DiceBody,
+  rand: () => number = Math.random,
+  power = 1,
+): DiceBody {
   const toCenter = Math.atan2(0.5 - body.pos.y, 0.5 - body.pos.x);
   const a = toCenter + (rand() - 0.5) * 2.4;
-  const mag = 1.1 + rand() * 0.6;
+  const mag = (1.1 + rand() * 0.6) * power;
   return { pos: body.pos, vel: { x: Math.cos(a) * mag, y: Math.sin(a) * mag } };
 }
 

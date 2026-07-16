@@ -3,15 +3,17 @@ import type { DiceBody, Vec } from '../../engine/dice';
 import {
   isStopped,
   randSlamCount,
+  sectorMid,
   slamImpulse,
   slamInterval,
+  slamPower,
   stepBody,
   zoneOf,
-  zoneRects,
 } from '../../engine/dice';
 
 type Props = {
   items: string[];
+  winnerIndex: number;
   onWin: (index: number) => void;
 };
 
@@ -38,9 +40,30 @@ const FACES = [
   { v: 5, tf: 'rotateX(-90deg) translateZ(22px)' },
 ];
 
+/** 부채꼴 i의 SVG 패스 (viewBox 0~100). 중심에서 가장자리로 — 모든 구역이 합동이다. */
+function sectorPath(i: number, n: number): string {
+  const a0 = -Math.PI / 2 + (i * Math.PI * 2) / n;
+  const a1 = -Math.PI / 2 + ((i + 1) * Math.PI * 2) / n;
+  const R = 50;
+  const x0 = 50 + Math.cos(a0) * R;
+  const y0 = 50 + Math.sin(a0) * R;
+  const x1 = 50 + Math.cos(a1) * R;
+  const y1 = 50 + Math.sin(a1) * R;
+  const large = 2 / n > 1 ? 1 : 0; // n=1일 때만 대호 — 실사용(n≥2)에선 0
+  return `M 50 50 L ${x0.toFixed(3)} ${y0.toFixed(3)} A ${R} ${R} 0 ${large} 1 ${x1.toFixed(3)} ${y1.toFixed(3)} Z`;
+}
+
 export function DiceSlam({ items, onWin }: Props) {
   const n = items.length;
-  const zones = useMemo(() => zoneRects(n), [n]);
+  // 이름표 위치: 각 부채꼴 중앙각의 반지름 66% 지점
+  const labels = useMemo(
+    () =>
+      items.map((_, i) => {
+        const mid = sectorMid(i, n);
+        return { x: 0.5 + Math.cos(mid) * 0.33, y: 0.5 + Math.sin(mid) * 0.33 };
+      }),
+    [items, n],
+  );
 
   const [thrown, setThrown] = useState(false);
   const [doneZone, setDoneZone] = useState(-1);
@@ -82,9 +105,9 @@ export function DiceSlam({ items, onWin }: Props) {
       simTimeRef.current += h;
       body = stepBody(body, h);
       if (slamsRef.current > 0 && simTimeRef.current >= nextSlamAtRef.current) {
-        // 예약된 시각마다 ✋가 자동으로 내려친다 — 초반 빵빵빵, 마지막 5회는 카운트다운 페이스
-        body = slamImpulse(body);
+        // 예약된 시각마다 ✋ — 초반 빵빵빵, 카운트다운(마지막 5회)은 점점 세게 강타
         slamsRef.current -= 1;
+        body = slamImpulse(body, Math.random, slamPower(slamsRef.current));
         nextSlamAtRef.current =
           simTimeRef.current + slamInterval(slamsRef.current, initialSlamsRef.current);
         slammed = true;
@@ -112,7 +135,7 @@ export function DiceSlam({ items, onWin }: Props) {
     if (stateRef.current.thrown) return;
     stateRef.current.thrown = true;
     setThrown(true);
-    const start = { x: 0.35 + Math.random() * 0.3, y: 0.35 + Math.random() * 0.3 };
+    const start = { x: 0.4 + Math.random() * 0.2, y: 0.4 + Math.random() * 0.2 };
     posRef.current = start;
     setPos(start);
     const a = Math.random() * Math.PI * 2;
@@ -164,19 +187,35 @@ export function DiceSlam({ items, onWin }: Props) {
       )}
 
       <div className="dice-board">
-        {zones.map((r, i) => (
-          <div
+        <svg className="dice-sectors" viewBox="0 0 100 100" aria-hidden>
+          {done && <path d={sectorPath(doneZone, n)} className="dice-sector-hit" />}
+          {items.map((_, i) => {
+            const a = -Math.PI / 2 + (i * Math.PI * 2) / n;
+            return (
+              <line
+                key={i}
+                className="dice-sector-line"
+                x1={50}
+                y1={50}
+                x2={50 + Math.cos(a) * 50}
+                y2={50 + Math.sin(a) * 50}
+              />
+            );
+          })}
+        </svg>
+
+        {items.map((name, i) => (
+          <span
             key={i}
-            className={`dice-zone ${done && i === doneZone ? 'is-loser' : ''}`}
+            className="dice-name"
             style={{
-              left: `${r.x * 100}%`,
-              top: `${r.y * 100}%`,
-              width: `${r.w * 100}%`,
-              height: `${r.h * 100}%`,
+              left: `${labels[i].x * 100}%`,
+              top: `${labels[i].y * 100}%`,
+              color: ZONE_COLORS[i % ZONE_COLORS.length],
             }}
           >
-            <span style={{ color: ZONE_COLORS[i % ZONE_COLORS.length] }}>{items[i]}</span>
-          </div>
+            {name}
+          </span>
         ))}
 
         {thrown && (
