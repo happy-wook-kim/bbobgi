@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { AnimationKind } from '../types';
 import { gameOf } from '../games';
-import { assignTokens } from '../engine/tokens';
 
 type SetupOption = AnimationKind | 'random';
 
@@ -21,40 +20,8 @@ export function SetupScreen({ option, onStart, onBack }: Props) {
         ← 게임 바꾸기
       </button>
       <p className="eyebrow">{labelOf(option)}</p>
-      {option === 'card' ? <CardSetup onStart={onStart} /> : <NameSetup onStart={onStart} />}
+      <NameSetup onStart={onStart} />
     </div>
-  );
-}
-
-function CardSetup({ onStart }: { onStart: (items: string[]) => void }) {
-  const [count, setCount] = useState(3);
-  return (
-    <>
-      <h1 className="setup-title">몇 명이 뽑나요?</h1>
-      <div className="stepper">
-        <button
-          className="step-btn"
-          onClick={() => setCount((c) => Math.max(2, c - 1))}
-          disabled={count <= 2}
-          aria-label="한 명 줄이기"
-        >
-          −
-        </button>
-        <span className="step-count">{count}</span>
-        <button
-          className="step-btn"
-          onClick={() => setCount((c) => Math.min(12, c + 1))}
-          disabled={count >= 12}
-          aria-label="한 명 늘리기"
-        >
-          +
-        </button>
-      </div>
-      <p className="hint">{count}장의 카드가 깔려요. 각자 한 장씩 뽑으세요.</p>
-      <button className="btn-primary" onClick={() => onStart(assignTokens(count))}>
-        카드 깔기
-      </button>
-    </>
   );
 }
 

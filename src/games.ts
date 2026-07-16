@@ -25,7 +25,7 @@ type GameDef = {
  * 메뉴·타입·GameStage·설정 라벨·랜덤/점수 풀에 전부 자동 반영된다.
  */
 export const GAMES = [
-  { kind: 'card', icon: '🃏', title: '카드 뽑기', desc: '한 장씩 뒤집어 당첨 확인', Component: CardDraw },
+  { kind: 'card', icon: '🃏', title: '카드 뽑기', desc: '띡띡띡 돌다 멈춘 카드 공개', Component: CardDraw },
   { kind: 'roulette', icon: '🎡', title: '룰렛', desc: '돌려서 멈추는 사람', Component: Roulette },
   { kind: 'ladder', icon: '🪜', title: '사다리타기', desc: '줄 따라 내려가서', Component: Ladder },
   { kind: 'horse', icon: '🏇', title: '경마', desc: '꼴찌로 들어온 말이', Component: HorseRace },

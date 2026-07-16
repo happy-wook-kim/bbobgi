@@ -150,13 +150,23 @@ body {
   display: flex; flex-wrap: wrap; gap: 14px;
   justify-content: center; width: 100%; perspective: 2600px;
 }
+.card-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.card-owner { min-height: 18px; font-size: 13px; font-weight: 700; white-space: pre; }
 .flip-card {
   position: relative;
   flex: 0 0 auto;
   width: min(28vw, 189px); aspect-ratio: 3 / 4; padding: 0;
-  border: none; background: transparent; cursor: pointer;
+  border: none; background: transparent;
 }
-.flip-card:disabled { cursor: default; }
+/* 슬롯 포커스: 굵은 보라 테두리가 띡띡띡 옮겨 다닌다 (Material Purple #6200EE + 글로우) */
+.flip-card.is-focus::before {
+  content: '';
+  position: absolute; inset: -6px;
+  border: 6px solid #6200ee;
+  border-radius: 26px;
+  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.22), 0 0 20px rgba(98, 0, 238, 0.55);
+  z-index: 3;
+}
 .flip-inner {
   position: relative; display: block; width: 100%; height: 100%;
   transform-style: preserve-3d;
@@ -172,10 +182,6 @@ body {
 .mark-x { width: 46%; height: 46%; }
 .mark-x line { stroke: #e53935; stroke-width: 13; stroke-linecap: round; }
 .flip-front { background: var(--surface); border: 1px solid var(--line); transform: rotateY(180deg); }
-/* 뒤집기가 끝나면 3D를 풀어(flat) 앞면 이모지를 선명하게 */
-.flip-card.is-settled .flip-inner { transition: none; transform: none; transform-style: flat; }
-.flip-card.is-settled .flip-back { display: none; }
-.flip-card.is-settled .flip-front { transform: none; }
 /* 글로우는 이모지와 다른 레이어(오버레이)에 둬서 앞면 글자가 흐려지지 않게 한다 */
 .flip-card.is-winner::after {
   content: ''; position: absolute; inset: 0; border-radius: 18px;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { assignCards, spinPlan } from '../../engine/cardSlot';
 
 type Props = {
   items: string[];
@@ -8,6 +9,10 @@ type Props = {
 };
 
 const CONFETTI = ['#4338ff', '#ff5a5f', '#ffb020', '#20c997', '#f74fd4', '#17171a'];
+const NAME_COLORS = [
+  '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00acc1',
+  '#c2185b', '#fbc02d', '#5e35b1', '#00897b', '#d81b60', '#3949ab',
+];
 
 /** 당첨 카드 중심에서 사방으로 터지는 작은 폭죽 */
 function CardConfetti() {
@@ -47,70 +52,112 @@ function CardConfetti() {
 }
 
 export function CardDraw({ items, winnerIndex, onWin }: Props) {
-  const [flipped, setFlipped] = useState<number[]>([]);
-  const [settled, setSettled] = useState<number[]>([]); // 뒤집기 완료 → 3D 해제
-  const wonRef = useRef(0);
-  const found = flipped.includes(winnerIndex);
-  const nextOrder = flipped.length + 1;
+  const n = items.length;
+  // 참가자 순서대로 뽑을 카드를 미리 배정한다. 🎯 카드 = 걸린 사람(winnerIndex) 몫 — 슬롯은 연출.
+  const cardOf = useMemo(() => assignCards(n), [n]);
+  const targetCard = cardOf[winnerIndex];
 
-  const flip = (i: number) => {
-    if (flipped.includes(i) || found) return;
-    setFlipped((f) => [...f, i]);
+  const [started, setStarted] = useState(false);
+  const [turn, setTurn] = useState(-1); // 지금 뽑는 참가자
+  const [focus, setFocus] = useState(-1); // 포커스(굵은 테두리) 카드
+  const [flippedBy, setFlippedBy] = useState<Record<number, number>>({}); // 카드 → 뽑은 사람
+  const [done, setDone] = useState(false);
+  const timersRef = useRef<number[]>([]);
+
+  const after = (ms: number, fn: () => void) => {
+    timersRef.current.push(window.setTimeout(fn, ms));
   };
 
-  // 당첨 카드가 나오면 잠깐 뒤 결과를 알린다.
-  // onWin에는 위치가 아니라 '당첨 카드를 몇 번째로 뒤집었는지(0-based)'를 넘긴다.
-  // 점수 모드에서 참가자가 1·2·3번 순서대로 뽑으므로, 이 순번의 참가자가 걸린 사람이 된다.
-  useEffect(() => {
-    if (!found) return;
-    const order = flipped.indexOf(winnerIndex);
-    wonRef.current = window.setTimeout(() => onWin(order), 900);
-    return () => clearTimeout(wonRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [found]);
+  /** t번째 참가자의 슬롯 스핀 → 배정 카드에 멈춤 → 뒤집기 → 다음 차례/종료 */
+  const runTurn = (t: number, used: number[]) => {
+    setTurn(t);
+    const available = cardOf.map((_, c) => c).filter((c) => !used.includes(c));
+    const card = cardOf[t];
+    const { path, delays } = spinPlan(available, card);
+    let acc = 300; // 차례 시작 후 잠깐 숨 고르기
+    path.forEach((c, i) => {
+      acc += delays[i];
+      after(acc, () => setFocus(c));
+    });
+    after(acc + 420, () => {
+      // 멈춘 카드를 즉시 뒤집는다
+      setFlippedBy((prev) => ({ ...prev, [card]: t }));
+      if (t === winnerIndex) {
+        setDone(true);
+        // 🎯 확인할 여유를 두고 결과를 알린다.
+        after(1600, () => onWin(winnerIndex));
+      } else {
+        after(1400, () => runTurn(t + 1, [...used, card]));
+      }
+    });
+  };
+
+  const start = () => {
+    if (started) return;
+    setStarted(true);
+    runTurn(0, []);
+  };
+
+  useEffect(
+    () => () => {
+      timersRef.current.forEach(clearTimeout);
+    },
+    [],
+  );
 
   return (
     <div className="screen cards">
       <p className="eyebrow">카드 뽑기</p>
       <h2 className="stage-title">
-        {found ? '당첨 카드가 나왔어요' : `${nextOrder}번째, 카드를 뽑으세요`}
+        {done ? items[winnerIndex] : started && turn >= 0 ? `${items[turn]} 차례` : '시작을 누르세요'}
       </h2>
       <div className="card-grid">
-        {items.map((_, i) => {
-          const isFlipped = flipped.includes(i);
-          const isSettled = settled.includes(i);
-          const isWinner = i === winnerIndex;
+        {items.map((_, card) => {
+          const by = flippedBy[card];
+          const isFlipped = by !== undefined;
+          const isWinner = card === targetCard;
           return (
-            <button
-              key={i}
-              className={`flip-card ${isFlipped ? 'is-flipped' : ''} ${
-                isSettled ? 'is-settled' : ''
-              } ${isSettled && isWinner ? 'is-winner' : ''}`}
-              onClick={() => flip(i)}
-              disabled={isFlipped || found}
-              aria-label={isFlipped ? undefined : '카드 뒤집기'}
-              onTransitionEnd={() => {
-                if (isFlipped && !settled.includes(i)) setSettled((s) => [...s, i]);
-              }}
-            >
-              <span className="flip-inner">
-                <span className="flip-face flip-back" aria-hidden>?</span>
-                <span className="flip-face flip-front">
-                  {isWinner ? (
-                    <span style={{ color: 'initial' }}>🎯</span>
-                  ) : (
-                    <svg className="mark-x" viewBox="0 0 100 100" aria-hidden>
-                      <line x1="26" y1="26" x2="74" y2="74" />
-                      <line x1="74" y1="26" x2="26" y2="74" />
-                    </svg>
-                  )}
+            <div key={card} className="card-slot">
+              <div
+                className={`flip-card ${isFlipped ? 'is-flipped' : ''} ${
+                  isFlipped && isWinner ? 'is-winner' : ''
+                } ${focus === card && !isFlipped ? 'is-focus' : ''}`}
+              >
+                <span className="flip-inner">
+                  <span className="flip-face flip-back" aria-hidden>
+                    ?
+                  </span>
+                  <span className="flip-face flip-front">
+                    {isWinner ? (
+                      <span style={{ color: 'initial' }}>🎯</span>
+                    ) : (
+                      <svg className="mark-x" viewBox="0 0 100 100" aria-hidden>
+                        <line x1="26" y1="26" x2="74" y2="74" />
+                        <line x1="74" y1="26" x2="26" y2="74" />
+                      </svg>
+                    )}
+                  </span>
                 </span>
+                {isFlipped && isWinner && <CardConfetti />}
+              </div>
+              <span
+                className="card-owner"
+                style={{ color: NAME_COLORS[(by ?? 0) % NAME_COLORS.length] }}
+              >
+                {isFlipped ? items[by] : ' '}
               </span>
-              {isSettled && isWinner && <CardConfetti />}
-            </button>
+            </div>
           );
         })}
       </div>
+      <button
+        className="btn-primary"
+        onClick={start}
+        disabled={started}
+        style={{ visibility: started ? 'hidden' : 'visible' }}
+      >
+        시작
+      </button>
     </div>
   );
 }

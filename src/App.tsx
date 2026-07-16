@@ -28,7 +28,7 @@ export default function App() {
     setStep('setup');
   };
 
-  // 카드: assignTokens 토큰 items. 룰렛·사다리·랜덤: 입력한 이름 items.
+  // 모든 게임: 입력한 이름이 items.
   const handleStart = (nextItems: string[]) => {
     setItems(nextItems);
     setKind(option === 'random' ? randomKind() : (option as AnimationKind));
@@ -55,8 +55,6 @@ export default function App() {
     setRound((r) => r + 1);
   };
 
-  const isCard = kind === 'card';
-
   return (
     <div className="app">
       {step === 'choose' && <ChooseAnimation onChoose={handleChoose} />}
@@ -77,8 +75,8 @@ export default function App() {
           {result !== null && (
             <WinnerBurst
               overlay
-              label={isCard ? '🎯' : items[result]}
-              sub={isCard ? '이 카드를 뽑은 분이 쏘기로 했어요' : '오늘은 이분이 쏘기로 했어요'}
+              label={items[result]}
+              sub="오늘은 이분이 쏘기로 했어요"
               onHome={toHome}
               onReplay={replay}
             />

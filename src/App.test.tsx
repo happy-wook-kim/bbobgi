@@ -4,24 +4,24 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 
 describe('App 전체 흐름', () => {
-  it('카드 연출을 골라 끝까지 진행하면 당첨 연출이 나온다', async () => {
+  it('카드 뽑기: 이름 입력 후 시작하면 자동 진행 끝에 당첨 연출이 나온다', async () => {
     render(<App />);
 
     // 1) 연출 선택
     await userEvent.click(screen.getByRole('button', { name: /카드 뽑기/ }));
 
-    // 2) 인원 수 그대로 카드 깔기
-    await userEvent.click(screen.getByRole('button', { name: '카드 깔기' }));
+    // 2) 이름 입력 후 시작
+    const inputs = screen.getAllByPlaceholderText(/참가자/);
+    await userEvent.type(inputs[0], '철수');
+    await userEvent.type(inputs[1], '영희');
+    await userEvent.click(screen.getByRole('button', { name: '시작' }));
 
-    // 3) 카드를 모두 뒤집으면 당첨 카드가 나온다
-    const cards = screen.getAllByRole('button', { name: '카드 뒤집기' });
-    for (const card of cards) {
-      await userEvent.click(card);
-    }
+    // 3) 슬롯 자동 진행 시작 (게임 화면의 시작 버튼)
+    await userEvent.click(await screen.findByRole('button', { name: '시작' }));
 
-    // 4) 잠깐 뒤 당첨 연출
+    // 4) 차례가 자동으로 돌다 당첨 연출 (2명: 최대 두 스핀 ≈ 6~9초)
     expect(
-      await screen.findByText(/쏘기로 했어요/, {}, { timeout: 2000 }),
+      await screen.findByText(/쏘기로 했어요/, {}, { timeout: 15000 }),
     ).toBeInTheDocument();
-  });
+  }, 20000);
 });
