@@ -5,3 +5,6 @@ export const PLAYER_COLORS = [
 ];
 
 export const playerColor = (i: number) => PLAYER_COLORS[i % PLAYER_COLORS.length];
+
+/** 당첨 폭죽 색 — 카드 뽑기를 기준으로 한 공통 연출 */
+export const BURST_COLORS = ['#4338ff', '#ff5a5f', '#ffb020', '#20c997', '#f74fd4', '#17171a'];

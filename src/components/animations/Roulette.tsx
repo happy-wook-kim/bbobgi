@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PLAYER_COLORS } from '../../palette';
 import { PlayerName } from '../PlayerName';
+import { Burst } from '../Burst';
 
 type Props = {
   items: string[];
@@ -118,7 +119,10 @@ export function Roulette({ items, onWin }: Props) {
       </h2>
       <div className="wheel-wrap">
         <div className="wheel-pointer" aria-hidden>▾</div>
-        <div className="wheel" style={{ background, transform: `rotate(${rotation}deg)` }}>
+        <div
+          className={`wheel ${done ? 'is-winner' : ''}`}
+          style={{ background, transform: `rotate(${rotation}deg)` }}
+        >
           {items.map((label, i) => {
             const angle = i * sliceAngle;
             return (
@@ -130,6 +134,12 @@ export function Roulette({ items, onWin }: Props) {
             );
           })}
         </div>
+        {/* 당첨 폭죽 — 카드 뽑기 표준 연출 */}
+        {done && (
+          <span className="burst-anchor" style={{ left: '50%', top: '50%' }} aria-hidden>
+            <Burst />
+          </span>
+        )}
       </div>
       <button
         className="btn-primary"

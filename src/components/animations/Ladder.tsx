@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { PLAYER_COLORS, playerColor } from '../../palette';
+import { BURST_COLORS, PLAYER_COLORS, playerColor } from '../../palette';
 import { PlayerName } from '../PlayerName';
 
 type Props = {
@@ -157,7 +157,7 @@ export function Ladder({ items, winnerIndex, onWin }: Props) {
           dx: Math.cos(a) * d,
           dy: Math.sin(a) * d,
           delay: Math.random() * 0.08,
-          color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+          color: BURST_COLORS[i % BURST_COLORS.length], // 폭죽 색 통일 (카드 뽑기 기준)
         };
       }),
     [],

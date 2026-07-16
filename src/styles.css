@@ -225,6 +225,7 @@ body {
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
 }
 .wheel-label-text.is-winner { font-size: clamp(32px, 8.6vw, 48px); font-weight: 800; }
+.wheel.is-winner { animation: winner-glow 0.5s ease-in-out infinite alternate; } /* 당첨 링 통일 */
 
 /* ladder */
 .ladder-scroll { width: 100%; overflow-x: auto; padding: 4px 0; }
@@ -378,7 +379,10 @@ body {
   background: #eef3e7; /* 잔디 톤 트랙 */
 }
 .race-lane:nth-of-type(even) { background: #e5edda; } /* 레인 교대 띠 */
-.race-lane.is-loser { background: #fdecea; }
+.race-lane.is-loser {
+  background: #fdecea;
+  animation: winner-glow 0.5s ease-in-out infinite alternate; /* 카드 뽑기와 같은 accent 펄스 */
+}
 .race-item {
   position: absolute;
   bottom: 28px;
@@ -524,10 +528,11 @@ body {
 .dice-sector-line { stroke: rgba(255, 255, 255, 0.9); stroke-width: 1.2; }
 .dice-sector-win {
   fill: none;
-  stroke: #fff;
-  stroke-width: 2.5;
-  animation: sector-glow 0.7s ease-in-out infinite alternate;
+  stroke: var(--accent); /* 당첨 링 — 카드 뽑기와 같은 accent 펄스 */
+  stroke-width: 3;
+  animation: sector-glow 0.5s ease-in-out infinite alternate;
 }
+.burst-anchor { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 4; }
 @keyframes sector-glow {
   from { stroke-opacity: 0.5; }
   to { stroke-opacity: 1; }

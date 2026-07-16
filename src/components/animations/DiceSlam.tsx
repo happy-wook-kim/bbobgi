@@ -12,6 +12,7 @@ import {
 } from '../../engine/dice';
 import { playerColor } from '../../palette';
 import { PlayerName } from '../PlayerName';
+import { Burst } from '../Burst';
 
 type Props = {
   items: string[];
@@ -258,6 +259,17 @@ export function DiceSlam({ items, onWin }: Props) {
           </>
         )}
         </div>
+
+        {/* 당첨 폭죽 — 멈춘 자리에서 터진다 (카드 뽑기 표준 연출) */}
+        {done && (
+          <span
+            className="burst-anchor"
+            style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%` }}
+            aria-hidden
+          >
+            <Burst />
+          </span>
+        )}
 
         {/* 보드(overflow hidden) 밖 레이어 — 손바닥이 원 가장자리에서 잘리지 않는다 */}
         {fx && (
