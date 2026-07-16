@@ -10,7 +10,8 @@ const OPTIONS: { option: ChooseOption; icon: string; title: string; desc: string
   { option: 'roulette', icon: '🎡', title: '룰렛', desc: '돌려서 멈추는 사람' },
   { option: 'ladder', icon: '🪜', title: '사다리타기', desc: '줄 따라 내려가서' },
   { option: 'horse', icon: '🏇', title: '경마', desc: '꼴찌로 들어온 말이' },
-  { option: 'random', icon: '🎲', title: '랜덤', desc: '넷 중 하나 랜덤으로' },
+  { option: 'dice', icon: '🎲', title: '주사위', desc: '쿵! 쳐서 굴리다 멈춘 구역' },
+  { option: 'random', icon: '🔀', title: '랜덤', desc: '넷 중 하나 랜덤으로' },
   { option: 'score', icon: '🏆', title: '점수 대결', desc: '목표 점수 먼저 도달' },
 ];
 
