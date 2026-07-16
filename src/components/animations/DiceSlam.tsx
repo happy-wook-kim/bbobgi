@@ -213,7 +213,6 @@ export function DiceSlam({ items, onWin }: Props) {
               />
             );
           })}
-          {done && <path d={sectorPath(doneZone, n)} className="dice-sector-win" />}
         </svg>
 
         {items.map((name, i) => (
