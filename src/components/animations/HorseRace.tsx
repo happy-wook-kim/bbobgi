@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { buildRaceProfiles, progressAt, speedAt } from '../../engine/race';
 import { playerColor } from '../../palette';
 import { PlayerName } from '../PlayerName';
@@ -38,6 +39,33 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
   // 1등이 결승선을 끊는 순간의 포토피니시 플래시
   const firstFinish = useMemo(() => Math.min(...profiles.map((p) => p.finishTime)), [profiles]);
   const flash = started && t >= firstFinish && t < firstFinish + 320;
+
+  // 마지막 두 마리 접전 클로즈업: 셋째 꼴찌가 들어온 순간부터 남은 둘 주변을 확대
+  const trackRef = useRef<HTMLDivElement>(null);
+  const duo = useMemo(() => {
+    if (n < 3) return null; // 2명이면 경기 전체가 접전이라 불필요
+    const order = profiles
+      .map((_, i) => i)
+      .sort((a, b) => profiles[a].finishTime - profiles[b].finishTime);
+    // 셋째 꼴찌 도착 직전부터 줌인해 접전을 여유 있게 보여준다
+    return { a: order[n - 2], b: order[n - 1], from: profiles[order[n - 3]].finishTime - 600 };
+  }, [profiles, n]);
+  const LANE_STEP = 75; // 레인 높이 70 + 간격 5
+  let zoomStyle: CSSProperties | undefined;
+  if (duo && started && !done && t >= duo.from) {
+    const W = trackRef.current?.clientWidth ?? 360;
+    const usablePx = W - PAD_L - PAD_R - HORSE_W;
+    const midP = (progressAt(profiles[duo.a], t) + progressAt(profiles[duo.b], t)) / 2;
+    const x = PAD_L + midP * usablePx + HORSE_W / 2;
+    const y = ((duo.a + duo.b) / 2) * LANE_STEP + LANE_STEP / 2;
+    // 두 레인이 멀수록 배율을 낮춰 둘 다 화면(H/scale 창) 안에 남긴다
+    const dist = Math.abs(duo.a - duo.b) * LANE_STEP;
+    const scale = Math.max(1, Math.min(1.7, (n * LANE_STEP) / (dist + 110)));
+    zoomStyle = {
+      transform: `scale(${scale.toFixed(3)})`,
+      transformOrigin: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
+    };
+  }
   const rafRef = useRef(0);
   const wonRef = useRef(0);
   const endTime = profiles[winnerIndex].finishTime; // 꼴찌 도착 = 레이스 종료
@@ -81,7 +109,8 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
           '출발을 누르세요'
         )}
       </h2>
-      <div className="race-track">
+      <div className="race-zoomwrap">
+      <div className="race-track" ref={trackRef} style={zoomStyle}>
         {items.map((name, i) => {
           const progress = progressAt(profiles[i], t);
           const finished = started && t >= profiles[i].finishTime;
@@ -160,6 +189,7 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
         <span className="race-wall" aria-hidden />
         <span className="race-finish" aria-hidden />
         {flash && <span className="race-flash" aria-hidden />}
+      </div>
       </div>
       <button
         className="btn-primary"

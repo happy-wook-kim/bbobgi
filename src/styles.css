@@ -371,7 +371,14 @@ body {
   border: 1px solid var(--ink);
   border-radius: 2px;
 }
-.race-track { position: relative; display: flex; flex-direction: column; gap: 5px; }
+.race-zoomwrap { width: 100%; overflow: hidden; border-radius: 12px; } /* 접전 줌 시 넘치는 부분 가림 */
+.race-track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: transform 0.55s ease; /* 접전 클로즈업 줌인/아웃 */
+}
 /* 포토피니시 플래시 — 1등이 결승선을 끊는 순간 한 번 번쩍 */
 .race-flash {
   position: absolute;
