@@ -371,7 +371,21 @@ body {
   border: 1px solid var(--ink);
   border-radius: 2px;
 }
-.race-track { display: flex; flex-direction: column; gap: 5px; }
+.race-track { position: relative; display: flex; flex-direction: column; gap: 5px; }
+/* 포토피니시 플래시 — 1등이 결승선을 끊는 순간 한 번 번쩍 */
+.race-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  animation: race-flash 0.32s ease-out;
+}
+@keyframes race-flash {
+  0% { opacity: 0.75; }
+  100% { opacity: 0; }
+}
 .race-lane {
   position: relative;
   height: 70px;
@@ -444,20 +458,18 @@ body {
   gap: 5px;
 }
 .race-speed {
-  padding: 1px 7px;
-  font-size: 11px;
+  padding: 1px 6px;
+  font-size: 10px;
   font-weight: 700;
   font-style: normal;
   line-height: 1.4;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  background: var(--surface); /* 점선이 글자를 지나가지 않게 칩으로 가린다 */
-  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.8); /* 은은한 칩 — 정보는 주되 연출을 방해하지 않게 */
   border-radius: 999px;
 }
 .race-speed.is-fast { color: #fb8c00; }
 .race-speed.is-slow { color: #e53935; }
-.race-speed.is-sprint { color: #1e88e5; }
 .race-badge {
   padding: 1px 8px;
   font-size: 11px;
@@ -468,10 +480,8 @@ body {
   color: #fff;
   background: var(--muted);
 }
-.race-badge.is-sprint { background: #1e88e5; }
 .race-badge.is-fast { background: #fb8c00; }
 .race-badge.is-slow { background: #e53935; }
-.race-badge.is-tired { background: #8c8c86; }
 .race-glyph {
   display: inline-block;
   font-style: normal;
@@ -521,7 +531,11 @@ body {
   font-size: 13px;
   color: var(--muted);
 }
-.race-rank.is-loser { color: #e53935; font-size: 15px; }
+.race-rank.is-loser {
+  color: #e53935;
+  font-size: 19px;
+  animation: count-bang 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); /* 꼴찌 확정: 쾅 하고 박힌다 */
+}
 
 /* ── 주사위 슬램 ── */
 .dice-count {

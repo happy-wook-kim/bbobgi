@@ -35,6 +35,9 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
   const [t, setT] = useState(0);
   const [started, setStarted] = useState(false);
   const [done, setDone] = useState(false);
+  // 1등이 결승선을 끊는 순간의 포토피니시 플래시
+  const firstFinish = useMemo(() => Math.min(...profiles.map((p) => p.finishTime)), [profiles]);
+  const flash = started && t >= firstFinish && t < firstFinish + 320;
   const rafRef = useRef(0);
   const wonRef = useRef(0);
   const endTime = profiles[winnerIndex].finishTime; // 꼴찌 도착 = 레이스 종료
@@ -135,22 +138,18 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
                 {finished ? (done && isLoser ? '꼴찌' : `${rankOf[i] + 1}등`) : ''}
               </b>
               {started && !finished && (() => {
-                // 속도 수치와 상태 문구를 분리 — 문구는 옆의 색 뱃지로
-                const state = active
+                // 정보 다이어트: 뱃지는 돌/부스터 이벤트 때만 (스퍼트·지침은 💨💦 이모지로 충분)
+                const badge = active
                   ? active.kind === 'rock'
                     ? { cls: 'is-slow', label: '돌에 걸림!' }
                     : { cls: 'is-fast', label: '부스터!' }
-                  : condition === 'sprint'
-                    ? { cls: 'is-sprint', label: '스퍼트 중' }
-                    : condition === 'tired'
-                      ? { cls: 'is-tired', label: '지침…' }
-                      : null;
+                  : null;
                 return (
                   <span className="race-hud">
-                    <i className={`race-speed ${state?.cls ?? ''}`}>
+                    <i className={`race-speed ${badge?.cls ?? ''}`}>
                       {Math.round(spd * KMH)} km/h
                     </i>
-                    {state && <i className={`race-badge ${state.cls}`}>{state.label}</i>}
+                    {badge && <i className={`race-badge ${badge.cls}`}>{badge.label}</i>}
                   </span>
                 );
               })()}
@@ -160,6 +159,7 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
         {/* 레인(꼴찌 강조 배경)보다 뒤에 그려 선이 가려지지 않게 한다 */}
         <span className="race-wall" aria-hidden />
         <span className="race-finish" aria-hidden />
+        {flash && <span className="race-flash" aria-hidden />}
       </div>
       <button
         className="btn-primary"
