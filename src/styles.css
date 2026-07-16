@@ -47,6 +47,8 @@ body {
 }
 
 .stage-title { font-size: 22px; font-weight: 700; margin: 0; }
+/* 참가자 이름 공통 강조: 참가자 색 + 굵게 + 주변 텍스트보다 크게 (PlayerName 컴포넌트) */
+.player-name { font-weight: 800; font-size: 1.35em; }
 .roulette .stage-title { font-size: clamp(26px, 6.5vw, 36px); }
 .hint { color: var(--muted); font-size: 14px; margin: 0; }
 
@@ -235,7 +237,7 @@ body {
 .ladder-node { fill: var(--ink); }
 .ladder-exit { font-size: 16px; fill: var(--muted); }
 .ladder-exit.is-target { font-size: 30px; }
-.ladder-entry { font-size: 13px; fill: var(--ink); font-weight: 700; }
+.ladder-entry { font-size: 15px; font-weight: 800; } /* fill은 참가자 색(속성)으로 */
 .ladder-portal-dot { stroke-width: 4; }
 .ladder-marker { stroke: #fff; stroke-width: 2.5; }
 .ladder-trace {
@@ -262,7 +264,6 @@ body {
 
 /* scoreboard (점수 대결 판 사이) */
 .scoreboard { justify-content: center; gap: 20px; }
-.score-hit-name { color: var(--accent); }
 .score-list {
   list-style: none; margin: 0; padding: 0; width: 100%;
   display: flex; flex-direction: column; gap: 8px;
@@ -277,7 +278,7 @@ body {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
-.score-name { flex: 0 0 auto; font-weight: 700; font-size: 16px; }
+.score-name { flex: 0 0 auto; font-weight: 800; font-size: 18px; }
 .score-dots { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
 .score-dots i {
   width: 12px; height: 12px; border-radius: 50%;

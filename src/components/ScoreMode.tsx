@@ -4,6 +4,8 @@ import { pickWinner } from '../engine/pick';
 import { shuffleKinds } from '../engine/randomKind';
 import { GameStage } from './GameStage';
 import { WinnerBurst } from './WinnerBurst';
+import { PlayerName } from './PlayerName';
+import { playerColor } from '../palette';
 
 type Props = { onHome: () => void };
 type Phase = 'setup' | 'play' | 'board' | 'done';
@@ -119,7 +121,7 @@ export function ScoreMode({ onHome }: Props) {
       <div className="screen scoreboard">
         <p className="eyebrow">{roundNo}판 종료</p>
         <h2 className="stage-title">
-          <b className="score-hit-name">{players[lastLoser]}</b> 걸렸어요!
+          <PlayerName i={lastLoser}>{players[lastLoser]}</PlayerName> 걸렸어요!
         </h2>
         <ul className="score-list">
           {players.map((name, i) => (
@@ -129,7 +131,9 @@ export function ScoreMode({ onHome }: Props) {
                 scores[i] === leader ? 'is-leader' : ''
               }`}
             >
-              <span className="score-name">{name}</span>
+              <span className="score-name" style={{ color: playerColor(i) }}>
+                {name}
+              </span>
               <span className="score-dots" aria-hidden>
                 {Array.from({ length: target }, (_, d) => (
                   <i key={d} className={d < scores[i] ? 'on' : ''} />

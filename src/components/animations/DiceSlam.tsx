@@ -10,17 +10,14 @@ import {
   stepBody,
   zoneOf,
 } from '../../engine/dice';
+import { playerColor } from '../../palette';
+import { PlayerName } from '../PlayerName';
 
 type Props = {
   items: string[];
   winnerIndex: number;
   onWin: (index: number) => void;
 };
-
-const ZONE_COLORS = [
-  '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00acc1',
-  '#c2185b', '#fbc02d', '#5e35b1', '#00897b', '#d81b60', '#3949ab',
-];
 
 // 3×3 격자에서 눈금(pip)이 켜지는 칸
 const PIPS: Record<number, number[]> = {
@@ -167,7 +164,13 @@ export function DiceSlam({ items, onWin }: Props) {
     <div className="screen dice">
       <p className="eyebrow">주사위</p>
       <h2 className="stage-title">
-        {done ? items[doneZone] : thrown ? '✋가 알아서 내려칩니다!' : '주사위를 던지세요'}
+        {done ? (
+          <PlayerName i={doneZone}>{items[doneZone]}</PlayerName>
+        ) : thrown ? (
+          '✋가 알아서 내려칩니다!'
+        ) : (
+          '주사위를 던지세요'
+        )}
       </h2>
 
       {thrown && !done && (
@@ -214,7 +217,7 @@ export function DiceSlam({ items, onWin }: Props) {
             style={{
               left: `${labels[i].x * 100}%`,
               top: `${labels[i].y * 100}%`,
-              color: ZONE_COLORS[i % ZONE_COLORS.length],
+              color: playerColor(i),
             }}
           >
             {name}

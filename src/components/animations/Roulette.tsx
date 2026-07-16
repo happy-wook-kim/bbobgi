@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { PlayerName } from '../PlayerName';
 
 type Props = {
   items: string[];
@@ -109,7 +110,13 @@ export function Roulette({ items, onWin }: Props) {
     <div className="screen roulette">
       <p className="eyebrow">룰렛</p>
       <h2 className="stage-title">
-        {spinning ? items[current] : done ? items[landed] : '돌려서 뽑으세요'}
+        {spinning ? (
+          <PlayerName i={current}>{items[current]}</PlayerName>
+        ) : done ? (
+          <PlayerName i={landed}>{items[landed]}</PlayerName>
+        ) : (
+          '돌려서 뽑으세요'
+        )}
       </h2>
       <div className="wheel-wrap">
         <div className="wheel-pointer" aria-hidden>▾</div>

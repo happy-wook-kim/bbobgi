@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { assignCards, spinPlan } from '../../engine/cardSlot';
+import { playerColor } from '../../palette';
+import { PlayerName } from '../PlayerName';
 
 type Props = {
   items: string[];
@@ -9,10 +11,6 @@ type Props = {
 };
 
 const CONFETTI = ['#4338ff', '#ff5a5f', '#ffb020', '#20c997', '#f74fd4', '#17171a'];
-const NAME_COLORS = [
-  '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00acc1',
-  '#c2185b', '#fbc02d', '#5e35b1', '#00897b', '#d81b60', '#3949ab',
-];
 
 /** 당첨 카드 중심에서 사방으로 터지는 작은 폭죽 */
 function CardConfetti() {
@@ -109,7 +107,15 @@ export function CardDraw({ items, winnerIndex, onWin }: Props) {
     <div className="screen cards">
       <p className="eyebrow">카드 뽑기</p>
       <h2 className="stage-title">
-        {done ? items[winnerIndex] : started && turn >= 0 ? `${items[turn]} 차례` : '시작을 누르세요'}
+        {done ? (
+          <PlayerName i={winnerIndex}>{items[winnerIndex]}</PlayerName>
+        ) : started && turn >= 0 ? (
+          <>
+            <PlayerName i={turn}>{items[turn]}</PlayerName> 차례
+          </>
+        ) : (
+          '시작을 누르세요'
+        )}
       </h2>
       <div className="card-grid">
         {items.map((_, card) => {
@@ -140,10 +146,7 @@ export function CardDraw({ items, winnerIndex, onWin }: Props) {
                 </span>
                 {isFlipped && isWinner && <CardConfetti />}
               </div>
-              <span
-                className="card-owner"
-                style={{ color: NAME_COLORS[(by ?? 0) % NAME_COLORS.length] }}
-              >
+              <span className="card-owner" style={{ color: playerColor(by ?? 0) }}>
                 {isFlipped ? items[by] : ' '}
               </span>
             </div>

@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildRaceProfiles, progressAt, speedAt } from '../../engine/race';
+import { playerColor } from '../../palette';
+import { PlayerName } from '../PlayerName';
 
 type Props = {
   items: string[];
   winnerIndex: number;
   onWin: (index: number) => void;
 };
-
-const HORSE_COLORS = [
-  '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00acc1',
-  '#c2185b', '#fbc02d', '#5e35b1', '#00897b', '#d81b60', '#3949ab',
-];
 
 // 트랙 전체(벽~결승선)가 항상 화면 안에 보인다 — 다른 게임들과 같은 방식.
 const PAD_L = 12; // 출발 벽 위치
@@ -73,7 +70,13 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
     <div className="screen race">
       <p className="eyebrow">경마</p>
       <h2 className="stage-title">
-        {done ? items[winnerIndex] : started ? '달리는 중…' : '출발을 누르세요'}
+        {done ? (
+          <PlayerName i={winnerIndex}>{items[winnerIndex]}</PlayerName>
+        ) : started ? (
+          '달리는 중…'
+        ) : (
+          '출발을 누르세요'
+        )}
       </h2>
       <div className="race-track">
         {items.map((name, i) => {
@@ -119,7 +122,7 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
                 style={{ left: `calc(${PAD_L}px + ${RUN_SPAN} * ${progress.toFixed(4)})` }}
                 aria-hidden
               >
-                <i className="race-tag" style={{ color: HORSE_COLORS[i % HORSE_COLORS.length] }}>
+                <i className="race-tag" style={{ color: playerColor(i) }}>
                   {name}
                 </i>
                 {horseState === 'is-stumbling' && <i className="race-fx">💫</i>}

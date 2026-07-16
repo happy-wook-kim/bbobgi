@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { PLAYER_COLORS, playerColor } from '../../palette';
+import { PlayerName } from '../PlayerName';
 
 type Props = {
   items: string[];
@@ -13,10 +15,6 @@ type Pair = { a: Portal; b: Portal; color: string };
 type Rung = { row: number; col: number };
 
 const PORTAL_COLORS = ['#2979ff', '#aa00ff', '#00b8d4', '#ff4081'];
-const PLAYER_COLORS = [
-  '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00acc1',
-  '#c2185b', '#fbc02d', '#5e35b1', '#00897b', '#d81b60', '#3949ab',
-];
 
 /** 입구 → 출구 경로. 아직 안 쓴 포탈은 만나면 반드시 탄다(탄 쌍은 재사용 금지). */
 function tracePath(
@@ -243,7 +241,15 @@ export function Ladder({ items, winnerIndex, onWin }: Props) {
     <div className="screen ladder">
       <p className="eyebrow">사다리타기</p>
       <h2 className="stage-title">
-        {arrived ? '도착!' : started && pIdx < n ? `${items[pIdx]} 차례` : '시작을 누르세요'}
+        {arrived ? (
+          '도착!'
+        ) : started && pIdx < n ? (
+          <>
+            <PlayerName i={pIdx}>{items[pIdx]}</PlayerName> 차례
+          </>
+        ) : (
+          '시작을 누르세요'
+        )}
       </h2>
 
       <div className="ladder-scroll">
@@ -287,7 +293,14 @@ export function Ladder({ items, winnerIndex, onWin }: Props) {
             />
           )}
           {items.map((label, i) => (
-            <text key={`en${i}`} className="ladder-entry" x={colX(i)} y={top - 16} textAnchor="middle">
+            <text
+              key={`en${i}`}
+              className="ladder-entry"
+              x={colX(i)}
+              y={top - 16}
+              textAnchor="middle"
+              fill={playerColor(i)}
+            >
               {label}
             </text>
           ))}
