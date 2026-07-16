@@ -200,6 +200,23 @@ describe('역전 리듬', () => {
   });
 });
 
+describe('속도 완충 (부드러운 가감속)', () => {
+  it('제어점 경계에서 속도가 끊기지 않고 연속이다', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      for (const p of buildRaceProfiles(3, seed % 3, lcg(seed))) {
+        const avg = 1 / p.finishTime;
+        // 내부 제어점 앞뒤 1ms의 속도 차가 평균 속도의 30% 이내
+        for (let i = 1; i < p.waypoints.length - 1; i++) {
+          const t = p.waypoints[i].t;
+          const before = speedAt(p, t - 1);
+          const after = speedAt(p, t + 1);
+          expect(Math.abs(after - before)).toBeLessThan(avg * 0.3);
+        }
+      }
+    }
+  });
+});
+
 describe('speedAt', () => {
   it('달리는 동안 양수, 도착 후에는 0이다', () => {
     const profiles = buildRaceProfiles(4, 1, lcg(5));
@@ -230,11 +247,11 @@ describe('speedAt', () => {
 
   it('구간 기울기와 일치한다 (progressAt 미분)', () => {
     const [p] = buildRaceProfiles(3, 0, lcg(9));
-    const dt = 1;
+    const dt = 0.5;
     for (let t = 200; t < p.finishTime - 200; t += 500) {
-      // 제어점 경계를 걸치는 표본은 건너뛴다 — 기울기는 한 구간 안에서만 일정하다
-      if (p.waypoints.some((w) => w.t > t && w.t < t + dt)) continue;
-      const numeric = (progressAt(p, t + dt) - progressAt(p, t)) / dt;
+      // 제어점 경계를 걸치는 표본은 건너뛴다 — 한 구간 안에서 중앙차분과 비교
+      if (p.waypoints.some((w) => w.t > t - dt && w.t < t + dt)) continue;
+      const numeric = (progressAt(p, t + dt) - progressAt(p, t - dt)) / (2 * dt);
       expect(Math.abs(speedAt(p, t) - numeric)).toBeLessThan(1e-6);
     }
   });

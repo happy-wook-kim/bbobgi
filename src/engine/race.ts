@@ -132,30 +132,48 @@ export function buildRaceProfiles(
   });
 }
 
-/** 시각 t(ms)의 순간 속도(진행도/ms). 달리는 중엔 구간 기울기, 도착 후엔 0. */
-export function speedAt(profile: RaceProfile, t: number): number {
+/**
+ * 단조 3차(Fritsch–Carlson) 보간용 접선. 구간 경계에서 속도가 매끄럽게 이어지면서도
+ * 역주행(비단조)이 생기지 않도록 접선을 인접 기울기의 3배 이하로 클램프한다.
+ */
+function hermite(profile: RaceProfile, t: number): { x: number; v: number } {
   const pts = profile.waypoints;
-  if (t < 0 || t >= profile.finishTime) return 0;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const a = pts[i];
-    const b = pts[i + 1];
-    if (t <= b.t) return (b.x - a.x) / (b.t - a.t);
-  }
-  return 0;
+  let i = 0;
+  while (i < pts.length - 2 && t > pts[i + 1].t) i++;
+  const a = pts[i];
+  const b = pts[i + 1];
+  const h = b.t - a.t;
+  const d = (b.x - a.x) / h; // 이 구간의 평균 기울기
+  const dPrev = i > 0 ? (a.x - pts[i - 1].x) / (a.t - pts[i - 1].t) : d;
+  const dNext = i < pts.length - 2 ? (pts[i + 2].x - b.x) / (pts[i + 2].t - b.t) : d;
+  const m0 = Math.min((dPrev + d) / 2, 3 * dPrev, 3 * d);
+  const m1 = Math.min((d + dNext) / 2, 3 * d, 3 * dNext);
+  const u = (t - a.t) / h;
+  const u2 = u * u;
+  const u3 = u2 * u;
+  const x =
+    (2 * u3 - 3 * u2 + 1) * a.x +
+    (u3 - 2 * u2 + u) * h * m0 +
+    (-2 * u3 + 3 * u2) * b.x +
+    (u3 - u2) * h * m1;
+  const v =
+    ((6 * u2 - 6 * u) * a.x +
+      (3 * u2 - 4 * u + 1) * h * m0 +
+      (-6 * u2 + 6 * u) * b.x +
+      (3 * u2 - 2 * u) * h * m1) /
+    h;
+  return { x, v };
 }
 
-/** 시각 t(ms)의 진행도(0~1). 제어점 사이 선형 보간, 단조 증가. */
+/** 시각 t(ms)의 순간 속도(진행도/ms). 경계에서도 끊기지 않는 부드러운 가감속. 도착 후엔 0. */
+export function speedAt(profile: RaceProfile, t: number): number {
+  if (t < 0 || t >= profile.finishTime) return 0;
+  return hermite(profile, t).v;
+}
+
+/** 시각 t(ms)의 진행도(0~1). 단조 3차 보간 — 부드럽게 가감속하며 절대 뒤로 가지 않는다. */
 export function progressAt(profile: RaceProfile, t: number): number {
-  const pts = profile.waypoints;
   if (t <= 0) return 0;
   if (t >= profile.finishTime) return 1;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const a = pts[i];
-    const b = pts[i + 1];
-    if (t <= b.t) {
-      const u = (t - a.t) / (b.t - a.t);
-      return a.x + (b.x - a.x) * u;
-    }
-  }
-  return 1;
+  return hermite(profile, t).x;
 }

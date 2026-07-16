@@ -379,10 +379,7 @@ body {
   background: #eef3e7; /* 잔디 톤 트랙 */
 }
 .race-lane:nth-of-type(even) { background: #e5edda; } /* 레인 교대 띠 */
-.race-lane.is-loser {
-  background: #fdecea;
-  box-shadow: 0 0 0 3px var(--focus); /* 선택된 레인 = 보라 테두리 */
-}
+.race-lane.is-loser { background: #fdecea; }
 .race-item {
   position: absolute;
   bottom: 28px;
