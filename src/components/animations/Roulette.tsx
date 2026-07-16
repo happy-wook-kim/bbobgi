@@ -113,9 +113,7 @@ export function Roulette({ items, onWin }: Props) {
         {spinning ? (
           <PlayerName i={current}>{items[current]}</PlayerName>
         ) : done ? (
-          <PlayerName i={landed} win>
-            {items[landed]}
-          </PlayerName>
+          <PlayerName i={landed}>{items[landed]}</PlayerName>
         ) : (
           '돌려서 뽑으세요'
         )}
