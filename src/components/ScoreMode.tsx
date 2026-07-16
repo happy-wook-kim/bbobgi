@@ -121,7 +121,10 @@ export function ScoreMode({ onHome }: Props) {
       <div className="screen scoreboard">
         <p className="eyebrow">{roundNo}판 종료</p>
         <h2 className="stage-title">
-          <PlayerName i={lastLoser}>{players[lastLoser]}</PlayerName> 걸렸어요!
+          <PlayerName i={lastLoser} win>
+            {players[lastLoser]}
+          </PlayerName>{' '}
+          걸렸어요!
         </h2>
         <ul className="score-list">
           {players.map((name, i) => (

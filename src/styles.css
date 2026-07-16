@@ -5,6 +5,7 @@
   --muted: #8c8c86;
   --line: #e6e4de;
   --accent: #4338ff;
+  --focus: #6200ee; /* 게임판 테두리·포커스 공통 (Material Purple, 카드 뽑기 기준) */
 }
 
 * { box-sizing: border-box; }
@@ -47,8 +48,8 @@ body {
 }
 
 .stage-title { font-size: 22px; font-weight: 700; margin: 0; }
-/* 참가자 이름 공통 강조: 참가자 색 + 굵게 + 주변 텍스트보다 크게 (PlayerName 컴포넌트) */
-.player-name { font-weight: 800; font-size: 1.35em; }
+/* 참가자 이름 공통 강조 (PlayerName 컴포넌트): 평소 참가자 색, 당첨 시 보라 텍스트 */
+.player-name { font-weight: 800; font-size: 1.35em; color: var(--focus); }
 .roulette .stage-title { font-size: clamp(26px, 6.5vw, 36px); }
 .hint { color: var(--muted); font-size: 14px; margin: 0; }
 
@@ -164,7 +165,7 @@ body {
 .flip-card.is-focus::before {
   content: '';
   position: absolute; inset: -6px;
-  border: 6px solid #6200ee;
+  border: 6px solid var(--focus);
   border-radius: 26px;
   box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.22), 0 0 20px rgba(98, 0, 238, 0.55);
   z-index: 3;
@@ -213,7 +214,7 @@ body {
 }
 .wheel {
   position: relative; width: 100%; height: 100%; border-radius: 50%;
-  border: 7px solid var(--ink); will-change: transform;
+  border: 7px solid var(--line); will-change: transform; /* 평상시: 카드 앞면 같은 회색 */
 }
 .wheel-label {
   position: absolute; left: 0; top: 0; width: 100%; height: 50%;
@@ -225,7 +226,7 @@ body {
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
 }
 .wheel-label-text.is-winner { font-size: clamp(32px, 8.6vw, 48px); font-weight: 800; }
-.wheel.is-winner { animation: winner-glow 0.5s ease-in-out infinite alternate; } /* 당첨 링 통일 */
+.wheel.is-winner { border-color: var(--focus); } /* 선택 확정 = 보라 테두리 */
 
 /* ladder */
 .ladder-scroll { width: 100%; overflow-x: auto; padding: 4px 0; }
@@ -381,7 +382,7 @@ body {
 .race-lane:nth-of-type(even) { background: #e5edda; } /* 레인 교대 띠 */
 .race-lane.is-loser {
   background: #fdecea;
-  animation: winner-glow 0.5s ease-in-out infinite alternate; /* 카드 뽑기와 같은 accent 펄스 */
+  box-shadow: 0 0 0 3px var(--focus); /* 선택된 레인 = 보라 테두리 */
 }
 .race-item {
   position: absolute;
@@ -516,31 +517,24 @@ body {
 .dice-board {
   position: absolute;
   inset: 0;
-  border: 2px solid var(--ink);
+  border: 7px solid var(--line); /* 룰렛 원판과 동일한 테두리 */
   border-radius: 50%; /* 원형 아레나 — 부채꼴 n등분이라 전원 크기·모양 동일 */
   overflow: hidden;
   background: var(--surface);
   perspective: 700px;
 }
 .dice-sectors { position: absolute; inset: 0; width: 100%; height: 100%; }
-.dice-sector { fill-opacity: 0.92; transition: fill-opacity 0.45s ease; } /* 살짝 톤 다운 */
+.dice-sector { transition: fill-opacity 0.45s ease; } /* 룰렛과 같은 원색 채움 */
 .dice-sector.is-dim { fill-opacity: 0.15; } /* 당첨 시 나머지 구역은 딤 */
-.dice-sector-line { stroke: rgba(255, 255, 255, 0.9); stroke-width: 1.2; }
 .dice-sector-win {
   fill: none;
-  stroke: var(--accent); /* 당첨 링 — 카드 뽑기와 같은 accent 펄스 */
+  stroke: var(--focus); /* 선택된 구역 = 보라 테두리 */
   stroke-width: 3;
-  animation: sector-glow 0.5s ease-in-out infinite alternate;
-}
-.burst-anchor { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 4; }
-@keyframes sector-glow {
-  from { stroke-opacity: 0.5; }
-  to { stroke-opacity: 1; }
 }
 .dice-name {
   position: absolute;
   transform: translate(-50%, -50%);
-  font-size: clamp(24px, 6.5vw, 36px); /* 룰렛 라벨과 비슷한 크기 */
+  font-size: clamp(28px, 7.5vw, 42px); /* 룰렛 라벨과 동일한 크기 */
   font-weight: 800;
   color: #fff; /* 색 채운 조각 위 흰 글자 — 룰렛과 동일한 언어 */
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);

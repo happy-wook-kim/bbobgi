@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildRaceProfiles, progressAt, speedAt } from '../../engine/race';
 import { playerColor } from '../../palette';
 import { PlayerName } from '../PlayerName';
-import { Burst } from '../Burst';
 
 type Props = {
   items: string[];
@@ -72,7 +71,9 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
       <p className="eyebrow">경마</p>
       <h2 className="stage-title">
         {done ? (
-          <PlayerName i={winnerIndex}>{items[winnerIndex]}</PlayerName>
+          <PlayerName i={winnerIndex} win>
+            {items[winnerIndex]}
+          </PlayerName>
         ) : started ? (
           '달리는 중…'
         ) : (
@@ -131,7 +132,6 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
                 {horseState === 'is-sprinting' && <i className="race-fx race-fx-boost">💨</i>}
                 {horseState === 'is-tired' && <i className="race-fx">💦</i>}
                 <i className="race-glyph">🐎</i>
-                {done && isLoser && <Burst />}
               </span>
               <b className={`race-rank ${done && isLoser ? 'is-loser' : ''}`}>
                 {finished ? (done && isLoser ? '꼴찌' : `${rankOf[i] + 1}등`) : ''}

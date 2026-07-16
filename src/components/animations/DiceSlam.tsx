@@ -12,7 +12,6 @@ import {
 } from '../../engine/dice';
 import { playerColor } from '../../palette';
 import { PlayerName } from '../PlayerName';
-import { Burst } from '../Burst';
 
 type Props = {
   items: string[];
@@ -166,7 +165,9 @@ export function DiceSlam({ items, onWin }: Props) {
       <p className="eyebrow">주사위</p>
       <h2 className="stage-title">
         {done ? (
-          <PlayerName i={doneZone}>{items[doneZone]}</PlayerName>
+          <PlayerName i={doneZone} win>
+            {items[doneZone]}
+          </PlayerName>
         ) : thrown ? (
           '✋가 알아서 내려칩니다!'
         ) : (
@@ -204,19 +205,6 @@ export function DiceSlam({ items, onWin }: Props) {
               fill={playerColor(i)}
             />
           ))}
-          {items.map((_, i) => {
-            const a = -Math.PI / 2 + (i * Math.PI * 2) / n;
-            return (
-              <line
-                key={`l${i}`}
-                className="dice-sector-line"
-                x1={50}
-                y1={50}
-                x2={50 + Math.cos(a) * 50}
-                y2={50 + Math.sin(a) * 50}
-              />
-            );
-          })}
           {done && <path d={sectorPath(doneZone, n)} className="dice-sector-win" />}
         </svg>
 
@@ -259,17 +247,6 @@ export function DiceSlam({ items, onWin }: Props) {
           </>
         )}
         </div>
-
-        {/* 당첨 폭죽 — 멈춘 자리에서 터진다 (카드 뽑기 표준 연출) */}
-        {done && (
-          <span
-            className="burst-anchor"
-            style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%` }}
-            aria-hidden
-          >
-            <Burst />
-          </span>
-        )}
 
         {/* 보드(overflow hidden) 밖 레이어 — 손바닥이 원 가장자리에서 잘리지 않는다 */}
         {fx && (

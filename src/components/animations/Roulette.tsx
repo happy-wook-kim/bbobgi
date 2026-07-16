@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PLAYER_COLORS } from '../../palette';
 import { PlayerName } from '../PlayerName';
-import { Burst } from '../Burst';
 
 type Props = {
   items: string[];
@@ -112,7 +111,9 @@ export function Roulette({ items, onWin }: Props) {
         {spinning ? (
           <PlayerName i={current}>{items[current]}</PlayerName>
         ) : done ? (
-          <PlayerName i={landed}>{items[landed]}</PlayerName>
+          <PlayerName i={landed} win>
+            {items[landed]}
+          </PlayerName>
         ) : (
           '돌려서 뽑으세요'
         )}
@@ -134,12 +135,6 @@ export function Roulette({ items, onWin }: Props) {
             );
           })}
         </div>
-        {/* 당첨 폭죽 — 카드 뽑기 표준 연출 */}
-        {done && (
-          <span className="burst-anchor" style={{ left: '50%', top: '50%' }} aria-hidden>
-            <Burst />
-          </span>
-        )}
       </div>
       <button
         className="btn-primary"
