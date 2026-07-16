@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { AnimationKind } from '../types';
+import { gameOf } from '../games';
 import { assignTokens } from '../engine/tokens';
 
 type SetupOption = AnimationKind | 'random';
@@ -10,14 +11,8 @@ type Props = {
   onBack: () => void;
 };
 
-const OPTION_LABEL: Record<SetupOption, string> = {
-  card: '카드 뽑기',
-  roulette: '룰렛',
-  ladder: '사다리타기',
-  horse: '경마',
-  dice: '주사위',
-  random: '랜덤',
-};
+// 라벨은 레지스트리에서 — 게임 추가 시 손댈 필요 없음
+const labelOf = (option: SetupOption) => (option === 'random' ? '랜덤' : gameOf(option).title);
 
 export function SetupScreen({ option, onStart, onBack }: Props) {
   return (
@@ -25,7 +20,7 @@ export function SetupScreen({ option, onStart, onBack }: Props) {
       <button className="btn-ghost back" onClick={onBack}>
         ← 게임 바꾸기
       </button>
-      <p className="eyebrow">{OPTION_LABEL[option]}</p>
+      <p className="eyebrow">{labelOf(option)}</p>
       {option === 'card' ? <CardSetup onStart={onStart} /> : <NameSetup onStart={onStart} />}
     </div>
   );
