@@ -459,19 +459,18 @@ body {
 .race-rank.is-loser { color: #e53935; font-size: 15px; }
 
 /* ── 주사위 슬램 ── */
-.dice-modes { display: flex; gap: 8px; }
-.dice-mode {
-  padding: 6px 14px;
-  font-size: 13px;
+.dice-count {
+  margin: 0;
+  font-size: 15px;
   font-weight: 700;
-  border-radius: 999px;
-  border: 1.5px solid var(--line);
-  background: var(--surface);
   color: var(--muted);
-  cursor: pointer;
+  animation: count-pop 0.3s ease-out; /* 횟수가 줄 때마다 통통 */
 }
-.dice-mode.is-active { border-color: var(--ink); color: var(--ink); }
-.dice-mode:disabled { opacity: 0.4; cursor: not-allowed; }
+.dice-count b { font-size: 19px; color: var(--ink); font-variant-numeric: tabular-nums; }
+@keyframes count-pop {
+  0% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
 .dice-board {
   position: relative;
   width: min(88vw, 420px);
@@ -480,8 +479,6 @@ body {
   border-radius: 16px;
   overflow: hidden;
   background: var(--surface);
-  touch-action: manipulation;
-  cursor: pointer;
   perspective: 700px;
 }
 .dice-zone {

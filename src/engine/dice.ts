@@ -1,16 +1,21 @@
 export type Vec = { x: number; y: number };
 export type ZoneRect = { x: number; y: number; w: number; h: number };
-export type DicePath = { pts: { t: number; x: number; y: number }[] };
 export type DiceBody = { pos: Vec; vel: Vec };
 
 const PAD = 0.06; // 주사위가 벽에 붙지 않는 여유
-const FRICTION = 1.4; // 지수 마찰(1/s)
+const FRICTION = 1.0; // 지수 마찰(1/s) — 낮을수록 오래, 멀리 굴러간다
 const BOUNCE_DAMP = 0.8; // 벽 반사 감쇠
 const STOP_EPS = 0.03; // 정지 판정 속도
-const ZONE_MARGIN = 0.15; // 확정 모드 목표점의 구역 가장자리 여유(비율)
+
+/** 이 속도 아래로 떨어지면 자동 슬램이 발동한다. */
+export const SLAM_TRIGGER = 0.55;
+
+/** 게임 시작 시 자동 슬램 횟수: 10~20 랜덤. */
+export function randSlamCount(rand: () => number = Math.random): number {
+  return 10 + Math.floor(rand() * 11);
+}
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-const clampPt = (p: Vec): Vec => ({ x: clamp(p.x, PAD, 1 - PAD), y: clamp(p.y, PAD, 1 - PAD) });
 
 /** 행별 셀 수(±1)와 높이(셀 수 비례)를 계산한다. 모든 구역 면적 = 1/n. */
 function rowsOf(n: number): { count: number; y: number; h: number; startIdx: number }[] {
@@ -55,62 +60,7 @@ export function zoneOf(pos: Vec, n: number): number {
   return last.startIdx + Math.min(Math.floor(x * last.count), last.count - 1);
 }
 
-/**
- * 🎯 확정 모드: 현재 위치에서 목표 구역 안 랜덤 지점까지, 킥(반동)→드리프트→감속 정지 경로를 계획한다.
- * 슬램 = 현재 위치에서 같은 목표로 재계획 → 몇 번을 치든 최종 구역은 바뀌지 않는다.
- */
-export function planPath(
-  from: Vec,
-  targetZone: number,
-  n: number,
-  rand: () => number = Math.random,
-): DicePath {
-  const r = zoneRects(n)[targetZone];
-  const target = clampPt({
-    x: r.x + r.w * (ZONE_MARGIN + rand() * (1 - 2 * ZONE_MARGIN)),
-    y: r.y + r.h * (ZONE_MARGIN + rand() * (1 - 2 * ZONE_MARGIN)),
-  });
-  // 킥: 슬램 반동으로 튀는 짧고 빠른 직진
-  const a = rand() * Math.PI * 2;
-  const len = 0.18 + rand() * 0.22;
-  const kick = clampPt({ x: from.x + Math.cos(a) * len, y: from.y + Math.sin(a) * len });
-  // 드리프트: 목표 쪽으로 굽어 가는 중간점
-  const u = 0.45 + rand() * 0.2;
-  const px = target.y - kick.y; // 수직 방향 지터
-  const py = kick.x - target.x;
-  const jitter = (rand() - 0.5) * 0.16;
-  const mid = clampPt({
-    x: kick.x + (target.x - kick.x) * u + px * jitter,
-    y: kick.y + (target.y - kick.y) * u + py * jitter,
-  });
-  return {
-    pts: [
-      { t: 0, x: from.x, y: from.y },
-      { t: 0.32, x: kick.x, y: kick.y },
-      { t: 0.85, x: mid.x, y: mid.y },
-      { t: 1.75 + rand() * 0.5, x: target.x, y: target.y },
-    ],
-  };
-}
-
-/** 경로 위 시각 t(초)의 위치. 구간마다 ease-out — 슬램 직후 빠르고 점점 느려진다. */
-export function pathPosAt(path: DicePath, t: number): Vec {
-  const pts = path.pts;
-  if (t <= 0) return { x: pts[0].x, y: pts[0].y };
-  for (let i = 0; i < pts.length - 1; i++) {
-    const a = pts[i];
-    const b = pts[i + 1];
-    if (t <= b.t) {
-      const u = (t - a.t) / (b.t - a.t);
-      const e = i === pts.length - 2 ? 1 - Math.pow(1 - u, 3) : 1 - Math.pow(1 - u, 2);
-      return { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e };
-    }
-  }
-  const last = pts[pts.length - 1];
-  return { x: last.x, y: last.y };
-}
-
-/** 🌪 물리 모드: 지수 마찰 + 벽 반사 한 스텝(dt초). 순수 — 새 객체를 반환한다. */
+/** 지수 마찰 + 벽 반사 한 스텝(dt초). 순수 — 새 객체를 반환한다. */
 export function stepBody(body: DiceBody, dt: number): DiceBody {
   let x = body.pos.x + body.vel.x * dt;
   let y = body.pos.y + body.vel.y * dt;
@@ -138,7 +88,7 @@ export function stepBody(body: DiceBody, dt: number): DiceBody {
 export function slamImpulse(body: DiceBody, rand: () => number = Math.random): DiceBody {
   const toCenter = Math.atan2(0.5 - body.pos.y, 0.5 - body.pos.x);
   const a = toCenter + (rand() - 0.5) * 2.4;
-  const mag = 0.9 + rand() * 0.6;
+  const mag = 1.1 + rand() * 0.6;
   return { pos: body.pos, vel: { x: Math.cos(a) * mag, y: Math.sin(a) * mag } };
 }
 

@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import {
   zoneRects,
   zoneOf,
-  planPath,
-  pathPosAt,
   stepBody,
   slamImpulse,
   isStopped,
+  randSlamCount,
+  SLAM_TRIGGER,
 } from './dice';
 
 /** 결정적 테스트용 LCG */
@@ -42,44 +42,21 @@ describe('zoneRects / zoneOf', () => {
   });
 });
 
-describe('planPath / pathPosAt (확정 모드)', () => {
-  it('경로의 시작은 from, 끝은 항상 목표 구역 안이다', () => {
-    for (let seed = 1; seed <= 40; seed++) {
-      const rand = lcg(seed);
-      const n = 2 + (seed % 7);
-      const target = seed % n;
-      const from = { x: 0.1 + rand() * 0.8, y: 0.1 + rand() * 0.8 };
-      const path = planPath(from, target, n, rand);
-      const start = pathPosAt(path, 0);
-      expect(start.x).toBeCloseTo(from.x, 9);
-      expect(start.y).toBeCloseTo(from.y, 9);
-      const last = path.pts[path.pts.length - 1];
-      const end = pathPosAt(path, last.t + 999);
-      expect(zoneOf(end, n)).toBe(target);
+describe('randSlamCount', () => {
+  it('10~20 사이의 정수를 반환한다', () => {
+    for (const r of [0, 0.001, 0.5, 0.999]) {
+      const c = randSlamCount(() => r);
+      expect(Number.isInteger(c)).toBe(true);
+      expect(c).toBeGreaterThanOrEqual(10);
+      expect(c).toBeLessThanOrEqual(20);
     }
-  });
-
-  it('슬램(재계획)을 아무리 반복해도 최종 구역은 목표 그대로다', () => {
-    for (let seed = 1; seed <= 30; seed++) {
-      const rand = lcg(seed);
-      const n = 4;
-      const target = seed % n;
-      let pos = { x: 0.5, y: 0.5 };
-      let path = planPath(pos, target, n, rand);
-      // 무작위 시점에 5번 내려친다
-      for (let s = 0; s < 5; s++) {
-        const last = path.pts[path.pts.length - 1];
-        pos = pathPosAt(path, rand() * last.t);
-        path = planPath(pos, target, n, rand);
-      }
-      const last = path.pts[path.pts.length - 1];
-      expect(zoneOf(pathPosAt(path, last.t), n)).toBe(target);
-    }
+    expect(randSlamCount(() => 0)).toBe(10);
+    expect(randSlamCount(() => 0.999)).toBe(20);
   });
 });
 
-describe('stepBody / slamImpulse (물리 모드)', () => {
-  it('마찰로 감속해 10초 안에 멈추고 보드 밖으로 나가지 않는다', () => {
+describe('stepBody / slamImpulse', () => {
+  it('마찰로 감속해 15초 안에 멈추고 보드 밖으로 나가지 않는다', () => {
     for (let seed = 1; seed <= 30; seed++) {
       const rand = lcg(seed);
       let body = {
@@ -87,7 +64,7 @@ describe('stepBody / slamImpulse (물리 모드)', () => {
         vel: { x: (rand() - 0.5) * 3, y: (rand() - 0.5) * 3 },
       };
       let stopped = false;
-      for (let t = 0; t < 10; t += 1 / 60) {
+      for (let t = 0; t < 15; t += 1 / 60) {
         body = stepBody(body, 1 / 60);
         expect(body.pos.x).toBeGreaterThanOrEqual(0);
         expect(body.pos.x).toBeLessThanOrEqual(1);
@@ -109,7 +86,43 @@ describe('stepBody / slamImpulse (물리 모드)', () => {
       const hit = slamImpulse(body, rand);
       expect(hit.pos).toEqual(body.pos);
       const speed = Math.hypot(hit.vel.x, hit.vel.y);
-      expect(speed).toBeGreaterThan(0.5);
+      expect(speed).toBeGreaterThan(SLAM_TRIGGER);
+    }
+  });
+});
+
+describe('자동 슬램 게임의 구역 확률', () => {
+  it('던지기 + 자동 슬램 10~20회 후 멈춘 구역이 대체로 균등하다 (n=4)', () => {
+    const n = 4;
+    const counts = new Array(n).fill(0);
+    const GAMES = 600;
+    for (let seed = 1; seed <= GAMES; seed++) {
+      const rand = lcg(seed * 7919);
+      // 컴포넌트와 동일한 시나리오: 랜덤 시작·던지기 → 속도가 SLAM_TRIGGER 아래면 자동 슬램
+      let body = {
+        pos: { x: 0.35 + rand() * 0.3, y: 0.35 + rand() * 0.3 },
+        vel: { x: 0, y: 0 },
+      };
+      const a = rand() * Math.PI * 2;
+      const mag = 1.1 + rand() * 0.6;
+      body.vel = { x: Math.cos(a) * mag, y: Math.sin(a) * mag };
+      let slams = randSlamCount(rand);
+      for (let t = 0; t < 90; t += 1 / 60) {
+        body = stepBody(body, 1 / 60);
+        const speed = Math.hypot(body.vel.x, body.vel.y);
+        if (slams > 0 && speed < SLAM_TRIGGER) {
+          body = slamImpulse(body, rand);
+          slams--;
+        } else if (slams === 0 && isStopped(body)) {
+          break;
+        }
+      }
+      counts[zoneOf(body.pos, n)]++;
+    }
+    // 균등(25%) 대비 크게 치우치지 않아야 한다
+    for (const c of counts) {
+      expect(c / GAMES).toBeGreaterThanOrEqual(0.15);
+      expect(c / GAMES).toBeLessThanOrEqual(0.35);
     }
   });
 });

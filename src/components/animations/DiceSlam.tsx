@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { DiceBody, DicePath, Vec } from '../../engine/dice';
+import type { DiceBody, Vec } from '../../engine/dice';
 import {
   isStopped,
-  pathPosAt,
-  planPath,
+  randSlamCount,
+  SLAM_TRIGGER,
   slamImpulse,
   stepBody,
   zoneOf,
@@ -12,11 +12,8 @@ import {
 
 type Props = {
   items: string[];
-  winnerIndex: number;
   onWin: (index: number) => void;
 };
-
-type Mode = 'steer' | 'physics';
 
 const ZONE_COLORS = [
   '#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#00acc1',
@@ -41,26 +38,22 @@ const FACES = [
   { v: 5, tf: 'rotateX(-90deg) translateZ(22px)' },
 ];
 
-const SLAM_COOLDOWN = 160; // 연타 폭주 방지(ms)
-
-export function DiceSlam({ items, winnerIndex, onWin }: Props) {
+export function DiceSlam({ items, onWin }: Props) {
   const n = items.length;
   const zones = useMemo(() => zoneRects(n), [n]);
 
-  const [mode, setMode] = useState<Mode>('steer');
   const [thrown, setThrown] = useState(false);
   const [doneZone, setDoneZone] = useState(-1);
   const [pos, setPos] = useState<Vec>({ x: 0.5, y: 0.5 });
+  const [slamsLeft, setSlamsLeft] = useState(0);
   const [fx, setFx] = useState<{ x: number; y: number; key: number } | null>(null);
 
-  const modeRef = useRef<Mode>('steer');
-  const pathRef = useRef<DicePath | null>(null);
-  const pathT0 = useRef(0);
   const bodyRef = useRef<DiceBody | null>(null);
+  const slamsRef = useRef(0);
   const lastFrame = useRef(0);
   const posRef = useRef<Vec>({ x: 0.5, y: 0.5 });
   const rotRef = useRef({ rx: -18, ry: 24 });
-  const stateRef = useRef({ thrown: false, done: false, lastSlam: 0 });
+  const stateRef = useRef({ thrown: false, done: false });
   const rafRef = useRef(0);
   const wonRef = useRef(0);
 
@@ -72,34 +65,41 @@ export function DiceSlam({ items, winnerIndex, onWin }: Props) {
     setPos(p);
   };
 
-  const stop = (zone: number) => {
-    stateRef.current.done = true;
-    setDoneZone(zone);
-    // 멈춘 구역을 눈으로 확인할 여유를 두고 결과를 알린다.
-    wonRef.current = window.setTimeout(() => onWin(zone), 900);
-  };
-
   const loop = (now: number) => {
     const st = stateRef.current;
     if (st.done) return;
-    if (modeRef.current === 'steer') {
-      const path = pathRef.current!;
-      const t = (now - pathT0.current) / 1000;
-      move(pathPosAt(path, t));
-      if (t >= path.pts[path.pts.length - 1].t) {
-        stop(winnerIndex); // 확정 모드: 목표 구역 = 걸린 사람
-        return;
-      }
-    } else {
-      const dt = Math.min((now - lastFrame.current) / 1000, 0.05);
-      lastFrame.current = now;
-      bodyRef.current = stepBody(bodyRef.current!, dt);
-      move(bodyRef.current.pos);
-      if (isStopped(bodyRef.current)) {
-        stop(zoneOf(bodyRef.current.pos, n)); // 물리 모드: 멈춘 자리
+    // 프레임이 느려도 시뮬레이션은 실시간을 따라가도록 고정 서브스텝으로 적분한다
+    let remaining = Math.min((now - lastFrame.current) / 1000, 0.25);
+    lastFrame.current = now;
+    let body = bodyRef.current!;
+    let slammed = false;
+    while (remaining > 0) {
+      const h = Math.min(remaining, 1 / 60);
+      remaining -= h;
+      body = stepBody(body, h);
+      const speed = Math.hypot(body.vel.x, body.vel.y);
+      if (slamsRef.current > 0 && speed < SLAM_TRIGGER) {
+        // 힘이 빠질 때마다 ✋가 자동으로 내려친다 — 남은 횟수 카운트다운
+        body = slamImpulse(body);
+        slamsRef.current -= 1;
+        slammed = true;
+      } else if (slamsRef.current === 0 && isStopped(body)) {
+        bodyRef.current = body;
+        move(body.pos);
+        st.done = true;
+        const zone = zoneOf(body.pos, n);
+        setDoneZone(zone);
+        // 멈춘 구역을 눈으로 확인할 여유를 두고 결과를 알린다.
+        wonRef.current = window.setTimeout(() => onWin(zone), 900);
         return;
       }
     }
+    if (slammed) {
+      setSlamsLeft(slamsRef.current);
+      setFx({ x: body.pos.x, y: body.pos.y, key: now });
+    }
+    bodyRef.current = body;
+    move(body.pos);
     rafRef.current = requestAnimationFrame(loop);
   };
 
@@ -110,50 +110,22 @@ export function DiceSlam({ items, winnerIndex, onWin }: Props) {
     const start = { x: 0.35 + Math.random() * 0.3, y: 0.35 + Math.random() * 0.3 };
     posRef.current = start;
     setPos(start);
-    if (modeRef.current === 'steer') {
-      pathRef.current = planPath(start, winnerIndex, n);
-      pathT0.current = performance.now();
-    } else {
-      const a = Math.random() * Math.PI * 2;
-      const mag = 1.1 + Math.random() * 0.6;
-      bodyRef.current = { pos: start, vel: { x: Math.cos(a) * mag, y: Math.sin(a) * mag } };
-      lastFrame.current = performance.now();
-    }
+    const a = Math.random() * Math.PI * 2;
+    const mag = 1.1 + Math.random() * 0.6;
+    bodyRef.current = { pos: start, vel: { x: Math.cos(a) * mag, y: Math.sin(a) * mag } };
+    slamsRef.current = randSlamCount();
+    setSlamsLeft(slamsRef.current);
+    lastFrame.current = performance.now();
     rafRef.current = requestAnimationFrame(loop);
   };
 
-  const slam = () => {
-    const st = stateRef.current;
-    const now = performance.now();
-    if (!st.thrown || st.done || now - st.lastSlam < SLAM_COOLDOWN) return;
-    st.lastSlam = now;
-    setFx({ x: posRef.current.x, y: posRef.current.y, key: now });
-    if (modeRef.current === 'steer') {
-      // 반동으로 튀어 오르되 목적지(걸린 사람 구역)는 그대로 — 결과 불변
-      pathRef.current = planPath(posRef.current, winnerIndex, n);
-      pathT0.current = now;
-    } else {
-      bodyRef.current = slamImpulse(bodyRef.current!);
-    }
-  };
-
-  const slamRef = useRef(slam);
-  slamRef.current = slam;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        slamRef.current();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
+  useEffect(
+    () => () => {
       cancelAnimationFrame(rafRef.current);
       clearTimeout(wonRef.current);
-    };
-  }, []);
+    },
+    [],
+  );
 
   const done = doneZone >= 0;
   const { rx, ry } = rotRef.current;
@@ -162,33 +134,22 @@ export function DiceSlam({ items, winnerIndex, onWin }: Props) {
     <div className="screen dice">
       <p className="eyebrow">주사위</p>
       <h2 className="stage-title">
-        {done ? items[doneZone] : thrown ? 'Space 키나 화면을 쳐보세요!' : '주사위를 던지세요'}
+        {done ? items[doneZone] : thrown ? '✋가 알아서 내려칩니다!' : '주사위를 던지세요'}
       </h2>
 
-      <div className="dice-modes" role="group" aria-label="모드 선택">
-        <button
-          className={`dice-mode ${mode === 'steer' ? 'is-active' : ''}`}
-          onClick={() => {
-            setMode('steer');
-            modeRef.current = 'steer';
-          }}
-          disabled={thrown}
-        >
-          🎯 확정 모드
-        </button>
-        <button
-          className={`dice-mode ${mode === 'physics' ? 'is-active' : ''}`}
-          onClick={() => {
-            setMode('physics');
-            modeRef.current = 'physics';
-          }}
-          disabled={thrown}
-        >
-          🌪 물리 모드
-        </button>
-      </div>
+      {thrown && !done && (
+        <p className="dice-count" key={slamsLeft}>
+          {slamsLeft > 0 ? (
+            <>
+              ✋ 남은 손바닥 <b>{slamsLeft}</b>번
+            </>
+          ) : (
+            '이제 멈춥니다…'
+          )}
+        </p>
+      )}
 
-      <div className="dice-board" onPointerDown={() => slamRef.current()}>
+      <div className="dice-board">
         {zones.map((r, i) => (
           <div
             key={i}
@@ -213,7 +174,7 @@ export function DiceSlam({ items, winnerIndex, onWin }: Props) {
             />
             <span
               key={fx?.key ?? 0} /* 슬램마다 remount → 홉(튀어오름) 애니메이션 재생 */
-              className={`dice-wrap ${done ? '' : 'is-rolling'}`}
+              className="dice-wrap"
               style={{ left: `${pos.x * 100}%`, top: `${pos.y * 100}%` }}
               aria-hidden
             >

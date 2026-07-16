@@ -17,6 +17,6 @@ export function GameStage({ kind, items, winnerIndex, onWin }: Props) {
   if (kind === 'card') return <CardDraw items={items} winnerIndex={winnerIndex} onWin={onWin} />;
   if (kind === 'roulette') return <Roulette items={items} onWin={onWin} />;
   if (kind === 'horse') return <HorseRace items={items} winnerIndex={winnerIndex} onWin={onWin} />;
-  if (kind === 'dice') return <DiceSlam items={items} winnerIndex={winnerIndex} onWin={onWin} />;
+  if (kind === 'dice') return <DiceSlam items={items} onWin={onWin} />;
   return <Ladder items={items} winnerIndex={winnerIndex} onWin={onWin} />;
 }
