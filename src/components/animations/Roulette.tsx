@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { PLAYER_COLORS } from '../../palette';
 import { PlayerName } from '../PlayerName';
 
 type Props = {
@@ -7,11 +6,14 @@ type Props = {
   onWin: (index: number) => void;
 };
 
-/** n등분 원판을 참가자 색으로 칠한다(주사위 아레나와 동일한 언어). 조각 i의 중앙이 12시 기준 i*(360/n)도. */
+// 빨주노초파남보 — 조각 구분이 확실한 무지개 원판
+const RAINBOW = ['#e53935', '#f57c00', '#fdd835', '#43a047', '#1e88e5', '#3949ab', '#8e24aa'];
+
+/** n등분 원판 배경을 무지개 색으로 칠한다. 조각 i의 중앙이 12시 기준 i*(360/n)도. */
 function conicBackground(n: number): string {
   const slice = 100 / n;
   const stops = Array.from({ length: n }, (_, i) => {
-    return `${PLAYER_COLORS[i % PLAYER_COLORS.length]} ${i * slice}% ${(i + 1) * slice}%`;
+    return `${RAINBOW[i % RAINBOW.length]} ${i * slice}% ${(i + 1) * slice}%`;
   });
   return `conic-gradient(from ${-180 / n}deg, ${stops.join(', ')})`;
 }

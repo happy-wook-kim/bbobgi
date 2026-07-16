@@ -196,15 +196,23 @@ export function DiceSlam({ items, onWin }: Props) {
       <div className="dice-stage">
         <div className="dice-board">
           <svg className="dice-sectors" viewBox="0 0 100 100" aria-hidden>
-          {/* 참가자 색으로 채운 부채꼴 — 당첨 시 나머지는 딤 처리 */}
-          {items.map((_, i) => (
-            <path
-              key={`s${i}`}
-              d={sectorPath(i, n)}
-              className={`dice-sector ${done && i !== doneZone ? 'is-dim' : ''}`}
-              fill={playerColor(i)}
-            />
-          ))}
+          {/* 주사위가 지금 머무는 구역을 당첨 색으로 계속 표시 — 어디 있는지 한눈에 */}
+          {thrown && (
+            <path d={sectorPath(done ? doneZone : zoneOf(pos, n), n)} className="dice-sector-hit" />
+          )}
+          {items.map((_, i) => {
+            const a = -Math.PI / 2 + (i * Math.PI * 2) / n;
+            return (
+              <line
+                key={`l${i}`}
+                className="dice-sector-line"
+                x1={50}
+                y1={50}
+                x2={50 + Math.cos(a) * 50}
+                y2={50 + Math.sin(a) * 50}
+              />
+            );
+          })}
           {done && <path d={sectorPath(doneZone, n)} className="dice-sector-win" />}
         </svg>
 
@@ -212,7 +220,11 @@ export function DiceSlam({ items, onWin }: Props) {
           <span
             key={i}
             className="dice-name"
-            style={{ left: `${labels[i].x * 100}%`, top: `${labels[i].y * 100}%` }}
+            style={{
+              left: `${labels[i].x * 100}%`,
+              top: `${labels[i].y * 100}%`,
+              color: playerColor(i),
+            }}
           >
             {name}
           </span>
