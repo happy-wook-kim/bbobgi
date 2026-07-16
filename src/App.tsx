@@ -76,7 +76,7 @@ export default function App() {
             <WinnerBurst
               overlay
               label={items[result]}
-              sub="오늘은 이분이 쏘기로 했어요"
+              sub={`오늘은 ${items[result]}님이 쏘기로 했어요`}
               onHome={toHome}
               onReplay={replay}
             />

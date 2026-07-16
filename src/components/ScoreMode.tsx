@@ -172,7 +172,7 @@ export function ScoreMode({ onHome }: Props) {
         <WinnerBurst
           overlay
           label={players[lastLoser]}
-          sub={`${target}점을 먼저 채웠어요 · 오늘은 이분이 쏩니다`}
+          sub={`${target}점을 먼저 채웠어요 · 오늘은 ${players[lastLoser]}님이 쏩니다`}
           onHome={onHome}
           onReplay={restart}
         />
