@@ -350,18 +350,33 @@ body {
 .race-wall,
 .race-finish {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  width: 0;
+  top: 2px;
+  bottom: 2px;
+  z-index: 1;
 }
-.race-wall { left: 12px; border-left: 4px solid var(--ink); } /* 출발 벽 */
-.race-finish { left: calc(100% - 46px); border-right: 3px solid var(--ink); } /* 결승선 */
+/* 출발 게이트: 두툼한 기둥 */
+.race-wall {
+  left: 10px;
+  width: 6px;
+  border-radius: 3px;
+  background: var(--ink);
+}
+/* 결승선: 체커 깃발 무늬 */
+.race-finish {
+  left: calc(100% - 46px);
+  width: 10px;
+  background: repeating-conic-gradient(var(--ink) 0% 25%, #fff 0% 50%) top left / 10px 10px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+}
+.race-track { display: flex; flex-direction: column; gap: 5px; }
 .race-lane {
   position: relative;
   height: 70px;
-  border-radius: 12px;
-  border-bottom: 2px dashed var(--line);
+  border-radius: 10px;
+  background: #eef3e7; /* 잔디 톤 트랙 */
 }
+.race-lane:nth-of-type(even) { background: #e5edda; } /* 레인 교대 띠 */
 .race-lane.is-loser { background: #fdecea; }
 .race-item {
   position: absolute;
