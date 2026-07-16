@@ -40,26 +40,29 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
   const firstFinish = useMemo(() => Math.min(...profiles.map((p) => p.finishTime)), [profiles]);
   const flash = started && t >= firstFinish && t < firstFinish + 320;
 
-  // 마지막 두 마리 접전 클로즈업: 셋째 꼴찌가 들어온 순간부터 남은 둘 주변을 확대
+  // 마지막 세 마리 접전 클로즈업: 선두 그룹이 다 들어올 무렵부터 접전 그룹 주변을 확대
   const trackRef = useRef<HTMLDivElement>(null);
-  const duo = useMemo(() => {
-    if (n < 3) return null; // 2명이면 경기 전체가 접전이라 불필요
+  const trio = useMemo(() => {
+    if (n < 4) return null; // 3명 이하면 전원이 접전이라 불필요
     const order = profiles
       .map((_, i) => i)
       .sort((a, b) => profiles[a].finishTime - profiles[b].finishTime);
-    // 셋째 꼴찌 도착 직전부터 줌인해 접전을 여유 있게 보여준다
-    return { a: order[n - 2], b: order[n - 1], from: profiles[order[n - 3]].finishTime - 600 };
+    // 마지막 선두 그룹 도착 직전부터 줌인해 접전을 여유 있게 보여준다
+    return { lanes: order.slice(n - 3), from: profiles[order[n - 4]].finishTime - 600 };
   }, [profiles, n]);
   const LANE_STEP = 75; // 레인 높이 70 + 간격 5
   let zoomStyle: CSSProperties | undefined;
-  if (duo && started && !done && t >= duo.from) {
+  if (trio && started && !done && t >= trio.from) {
     const W = trackRef.current?.clientWidth ?? 360;
     const H = n * LANE_STEP - 5; // 트랙 실제 높이
     const usablePx = W - PAD_L - PAD_R - HORSE_W;
-    const midP = (progressAt(profiles[duo.a], t) + progressAt(profiles[duo.b], t)) / 2;
+    const midP =
+      trio.lanes.reduce((a, i) => a + progressAt(profiles[i], t), 0) / trio.lanes.length;
     const x = PAD_L + midP * usablePx + HORSE_W / 2;
-    const y = ((duo.a + duo.b) / 2) * LANE_STEP + LANE_STEP / 2;
-    const scale = Math.max(1, Math.min(1.7, H / (Math.abs(duo.a - duo.b) * LANE_STEP + 110)));
+    const laneMin = Math.min(...trio.lanes);
+    const laneMax = Math.max(...trio.lanes);
+    const y = ((laneMin + laneMax) / 2) * LANE_STEP + LANE_STEP / 2;
+    const scale = Math.max(1, Math.min(1.7, H / ((laneMax - laneMin) * LANE_STEP + 110)));
     // 듀오 중심을 뷰포트 중앙으로 — 단, 트랙 밖 여백이 보이지 않게 클램프(가장자리 레인 잘림 방지)
     const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
     const tx = clamp(W / 2 - x * scale, W - W * scale, 0);

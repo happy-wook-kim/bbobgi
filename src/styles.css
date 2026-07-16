@@ -49,7 +49,7 @@ body {
 
 .stage-title { font-size: 22px; font-weight: 700; margin: 0; }
 /* 참가자 이름 공통 강조 (PlayerName 컴포넌트): 항상 참가자 색 + 굵게 + 크게 */
-.player-name { font-weight: 800; font-size: 1.35em; }
+.player-name { font-weight: 800; font-size: 1.5em; }
 .roulette .stage-title { font-size: clamp(26px, 6.5vw, 36px); }
 .hint { color: var(--muted); font-size: 14px; margin: 0; }
 

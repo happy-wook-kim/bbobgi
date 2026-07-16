@@ -36,19 +36,24 @@ describe('buildRaceProfiles', () => {
     }
   });
 
-  it('결승 상대는 꼴찌의 인접 레인이고, 나머지는 일찍(≤7.8s) 골인한다', () => {
+  it('접전 그룹은 꼴찌+위아래 인접 3마리이고, 나머지는 일찍(≤9.1s) 골인한다', () => {
     for (let seed = 1; seed <= 50; seed++) {
-      for (const n of [3, 4, 6, 12]) {
+      for (const n of [4, 6, 12]) {
         const loser = seed % n;
         const profiles = buildRaceProfiles(n, loser, lcg(seed));
         const order = profiles
           .map((_, i) => i)
           .sort((a, b) => profiles[a].finishTime - profiles[b].finishTime);
-        const partner = order[n - 2]; // 끝에서 둘째 = 결승 상대
-        expect(Math.abs(partner - loser)).toBe(1); // 클로즈업에 둘이 같이 잡히도록 인접 레인
-        expect(profiles[partner].finishTime).toBeGreaterThanOrEqual(11500);
-        for (const i of order.slice(0, n - 2)) {
-          expect(profiles[i].finishTime).toBeLessThanOrEqual(7800);
+        const trio = order.slice(n - 3).sort((a, b) => a - b); // 마지막 3마리의 레인
+        expect(trio).toContain(loser);
+        // 연속된 레인 블록 — 클로즈업에 셋이 같이 잡힌다
+        expect(trio[1]).toBe(trio[0] + 1);
+        expect(trio[2]).toBe(trio[1] + 1);
+        for (const i of order.slice(n - 3, n - 1)) {
+          expect(profiles[i].finishTime).toBeGreaterThanOrEqual(10900);
+        }
+        for (const i of order.slice(0, n - 3)) {
+          expect(profiles[i].finishTime).toBeLessThanOrEqual(9100);
         }
       }
     }
@@ -164,7 +169,7 @@ describe('역전 리듬', () => {
     expect(changed).toBeGreaterThanOrEqual(SEEDS * 0.6);
   });
 
-  it('마지막 두 마리는 홀로 남은 구간 내내 바짝 붙어 접전한다', () => {
+  it('마지막 세 마리는 홀로 남은 구간 내내 바짝 붙어 접전한다', () => {
     const SEEDS = 30;
     let swapsTotal = 0;
     for (let seed = 1; seed <= SEEDS; seed++) {
@@ -174,25 +179,24 @@ describe('역전 리듬', () => {
       const order = profiles
         .map((_, i) => i)
         .sort((a, b) => profiles[a].finishTime - profiles[b].finishTime);
-      const a = order[n - 2];
-      const b = order[n - 1];
-      const from = profiles[order[n - 3]].finishTime + 300; // 나머지 전원 골인 후
-      const to = profiles[a].finishTime - 100;
+      const trio = order.slice(n - 3);
+      const from = profiles[order[n - 4]].finishTime + 300; // 나머지 전원 골인 후
+      const to = profiles[trio[0]].finishTime - 100;
       let gapSum = 0;
       let count = 0;
       let prevSign = 0;
       for (let t = from; t <= to; t += (to - from) / 20) {
-        const gap = progressAt(profiles[a], t) - progressAt(profiles[b], t);
-        gapSum += Math.abs(gap);
+        const xs = trio.map((i) => progressAt(profiles[i], t));
+        gapSum += Math.max(...xs) - Math.min(...xs); // 셋의 전체 퍼짐
         count++;
-        const sign = Math.sign(gap);
+        const sign = Math.sign(xs[1] - xs[2]); // 둘째-꼴찌 순위 스왑 관찰
         if (prevSign !== 0 && sign !== 0 && sign !== prevSign) swapsTotal++;
         if (sign !== 0) prevSign = sign;
       }
-      // 접전: 평균 격차가 트랙의 11% 이내 (줌 1.7배에서 나란히 보이는 수준)
-      expect(gapSum / count).toBeLessThan(0.11);
+      // 접전: 셋의 평균 퍼짐이 트랙의 15% 이내
+      expect(gapSum / count).toBeLessThan(0.15);
     }
-    // 듀오끼리도 엎치락뒤치락이 일어난다 (시드 전체 합산)
+    // 접전 그룹 안에서도 엎치락뒤치락이 일어난다 (시드 전체 합산)
     expect(swapsTotal).toBeGreaterThanOrEqual(SEEDS * 0.5);
   });
 });

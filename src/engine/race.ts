@@ -5,12 +5,13 @@ export type RaceEventKind = 'rock' | 'boost';
 export type RaceEvent = { kind: RaceEventKind; t: number; duration: number; x: number };
 export type RaceProfile = { finishTime: number; waypoints: Waypoint[]; events: RaceEvent[] };
 
-// 선두 그룹(마지막 둘 제외)은 일찍 골인시키고, 마지막 두 마리가 길게 남아 접전한다
-const EARLY_FROM = 6000; // 선두 그룹 도착 시작(ms)
-const EARLY_TO = 7500; // 선두 그룹 도착 끝
-const DUEL_TIME = 11500; // 결승 상대(끝에서 둘째) 도착 — 이때까지 둘만의 접전
-const DUEL_JITTER = 500;
-const MARGIN_MIN = 250; // 꼴찌 접전 마진(ms) — 더 팽팽하게
+// 선두 그룹은 일찍 골인시키고, 마지막 세 마리(꼴찌+위아래 레인)가 길게 남아 접전한다
+const EARLY_FROM = 7000; // 선두 그룹 도착 시작(ms) — 접전 그룹과의 속도 차를 완만하게
+const EARLY_TO = 8800; // 선두 그룹 도착 끝
+const TRIO_FAR = 10900; // 접전 그룹 첫째(3등) 도착
+const TRIO_NEAR = 11400; // 접전 그룹 둘째 도착 — 꼴찌와 끝까지 붙는다
+const TRIO_JITTER = 300;
+const MARGIN_MIN = 250; // 꼴찌 접전 마진(ms) — 팽팽하게
 const MARGIN_MAX = 550;
 const ROCK_DX = 0.002; // 돌 구간 이동량: 거의 정지
 // 이벤트는 절대 시간 고정 — 남는 시간은 일반 구간이 흡수(스케일)하므로 finishTime은 불변
@@ -41,11 +42,23 @@ export function buildRaceProfiles(
   loserIndex: number,
   rand: () => number = Math.random,
 ): RaceProfile[] {
-  // 결승 상대는 꼴찌의 바로 위/아래 레인 — 접전 클로즈업에 둘이 항상 함께 잡힌다 (연출용 배정, 공정성 불변)
-  const partner =
-    loserIndex === 0 ? 1 : loserIndex === n - 1 ? n - 2 : loserIndex + (rand() < 0.5 ? -1 : 1);
-  // 나머지 선두 그룹은 6.0~7.5초 사이에 빨리 들어온다
-  const earlyCount = n - 2;
+  // 접전 그룹 = 꼴찌 + 위아래 인접 레인 (가장자리 레인이면 같은 쪽 두 칸) — 연출용 배정, 공정성 불변
+  const compLanes = (
+    loserIndex === 0
+      ? [1, 2]
+      : loserIndex === n - 1
+        ? [n - 2, n - 3]
+        : [loserIndex - 1, loserIndex + 1]
+  ).filter((c) => c >= 0 && c < n);
+  const compTimes = shuffle(
+    [TRIO_NEAR + rand() * TRIO_JITTER, TRIO_FAR + rand() * TRIO_JITTER].slice(0, compLanes.length),
+    rand,
+  );
+  const timeOf = new Map<number, number>();
+  compLanes.forEach((lane, k) => timeOf.set(lane, compTimes[k]));
+  const loserTime = Math.max(...compTimes) + MARGIN_MIN + rand() * (MARGIN_MAX - MARGIN_MIN);
+  // 나머지 선두 그룹은 7.0~8.8초 사이에 먼저 들어온다
+  const earlyCount = n - 1 - compLanes.length;
   const earlyTimes = shuffle(
     Array.from({ length: earlyCount }, (_, k) => {
       const base = earlyCount <= 1 ? 0 : (k * (EARLY_TO - EARLY_FROM)) / (earlyCount - 1);
@@ -53,8 +66,6 @@ export function buildRaceProfiles(
     }),
     rand,
   );
-  const partnerTime = DUEL_TIME + rand() * DUEL_JITTER; // 꼴찌와 끝까지 붙는 결승 상대
-  const loserTime = partnerTime + MARGIN_MIN + rand() * (MARGIN_MAX - MARGIN_MIN);
 
   // 트랙을 위치 기준 조각으로 구성한다: 아이템은 진행도 1/4·2/4·3/4 지점 고정(일정 간격),
   // 각 조각의 상대 시간을 계산한 뒤 총합이 finishTime이 되도록 정규화한다.
@@ -142,7 +153,7 @@ export function buildRaceProfiles(
   let cursor = 0;
   return Array.from({ length: n }, (_, i) => {
     const finishTime =
-      i === loserIndex ? loserTime : i === partner ? partnerTime : earlyTimes[cursor++];
+      i === loserIndex ? loserTime : (timeOf.get(i) ?? earlyTimes[cursor++]);
     return { finishTime, ...buildFor(finishTime) };
   });
 }
