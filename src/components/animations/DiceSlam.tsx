@@ -165,9 +165,7 @@ export function DiceSlam({ items, onWin }: Props) {
       <p className="eyebrow">주사위</p>
       <h2 className="stage-title">
         {done ? (
-          <PlayerName i={doneZone} win>
-            {items[doneZone]}
-          </PlayerName>
+          <PlayerName i={doneZone}>{items[doneZone]}</PlayerName>
         ) : thrown ? (
           '✋가 알아서 내려칩니다!'
         ) : (

@@ -71,9 +71,7 @@ export function HorseRace({ items, winnerIndex, onWin }: Props) {
       <p className="eyebrow">경마</p>
       <h2 className="stage-title">
         {done ? (
-          <PlayerName i={winnerIndex} win>
-            {items[winnerIndex]}
-          </PlayerName>
+          <PlayerName i={winnerIndex}>{items[winnerIndex]}</PlayerName>
         ) : started ? (
           '달리는 중…'
         ) : (

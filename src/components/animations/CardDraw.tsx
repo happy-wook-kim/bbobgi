@@ -69,9 +69,7 @@ export function CardDraw({ items, winnerIndex, onWin }: Props) {
       <p className="eyebrow">카드 뽑기</p>
       <h2 className="stage-title">
         {done ? (
-          <PlayerName i={winnerIndex} win>
-            {items[winnerIndex]}
-          </PlayerName>
+          <PlayerName i={winnerIndex}>{items[winnerIndex]}</PlayerName>
         ) : started && turn >= 0 ? (
           <>
             <PlayerName i={turn}>{items[turn]}</PlayerName> 차례

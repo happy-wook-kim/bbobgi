@@ -48,8 +48,8 @@ body {
 }
 
 .stage-title { font-size: 22px; font-weight: 700; margin: 0; }
-/* 참가자 이름 공통 강조 (PlayerName 컴포넌트): 평소 참가자 색, 당첨 시 보라 텍스트 */
-.player-name { font-weight: 800; font-size: 1.35em; color: var(--focus); }
+/* 참가자 이름 공통 강조 (PlayerName 컴포넌트): 항상 참가자 색 + 굵게 + 크게 */
+.player-name { font-weight: 800; font-size: 1.35em; }
 .roulette .stage-title { font-size: clamp(26px, 6.5vw, 36px); }
 .hint { color: var(--muted); font-size: 14px; margin: 0; }
 
@@ -516,7 +516,7 @@ body {
 .dice-board {
   position: absolute;
   inset: 0;
-  border: 2px solid var(--ink); /* 검정, 룰렛과 동일 (주사위 원래 굵기) */
+  border: 4px solid var(--ink); /* 검정, 룰렛과 동일한 굵기 */
   border-radius: 50%; /* 원형 아레나 — 부채꼴 n등분이라 전원 크기·모양 동일 */
   overflow: hidden;
   background: var(--surface);
